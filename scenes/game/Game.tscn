@@ -1,0 +1,68 @@
+[gd_scene load_steps=6 format=3 uid="uid://c1game0000001"]
+
+[ext_resource type="Script" path="res://scenes/game/Game.gd" id="1_game"]
+[ext_resource type="Script" path="res://scripts/map/MapGenerator.gd" id="2_mapgen"]
+[ext_resource type="Shader" path="res://scripts/shaders/retro_grain.gdshader" id="3_shader"]
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 1
+background_color = Color(0.015, 0.012, 0.01, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.3, 0.15, 0.1, 1)
+ambient_light_energy = 0.3
+fog_enabled = true
+fog_light_color = Color(0.25, 0.12, 0.08, 1)
+fog_light_energy = 1.0
+fog_density = 0.045
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.35
+glow_bloom = 0.05
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1"]
+shader = ExtResource("3_shader")
+shader_parameter/grain_amount = 0.07
+shader_parameter/vignette_strength = 0.55
+
+[node name="Game" type="Node3D"]
+script = ExtResource("1_game")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="MapGenerator" type="Node3D" parent="."]
+script = ExtResource("2_mapgen")
+
+[node name="Players" type="Node3D" parent="."]
+
+[node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Players")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="RoleLabel" type="Label" parent="UI"]
+offset_left = 40.0
+offset_top = 40.0
+offset_right = 400.0
+offset_bottom = 90.0
+theme_override_font_sizes/font_size = 32
+text = "..."
+
+[node name="TimerLabel" type="Label" parent="UI"]
+offset_left = 40.0
+offset_top = 90.0
+offset_right = 300.0
+offset_bottom = 130.0
+theme_override_font_sizes/font_size = 24
+text = "..."
+
+[node name="PostFX" type="ColorRect" parent="UI"]
+material = SubResource("ShaderMaterial_1")
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 1)

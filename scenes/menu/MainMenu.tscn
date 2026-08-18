@@ -1,0 +1,177 @@
+[gd_scene load_steps=2 format=3 uid="uid://d0m41nm3nu0000"]
+
+[ext_resource type="Script" path="res://scenes/menu/MainMenu.gd" id="1_menu"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.043, 0.039, 0.035, 1)
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_right = 300.0
+offset_top = 90.0
+offset_bottom = 160.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.75, 0.15, 0.1, 1)
+theme_override_font_sizes/font_size = 46
+horizontal_alignment = 1
+text = "RATS N RUST"
+
+[node name="Subtitle" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_right = 300.0
+offset_top = 150.0
+offset_bottom = 180.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.55, 0.52, 0.5, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+text = "survive. hide. run."
+
+[node name="PanelMain" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelMain"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="BtnPlay" type="Button" parent="PanelMain/VBox"]
+custom_minimum_size = Vector2(280, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "JUGAR"
+
+[node name="BtnQuit" type="Button" parent="PanelMain/VBox"]
+custom_minimum_size = Vector2(280, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "SALIR"
+
+[node name="PanelPlay" type="CenterContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelPlay"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="BtnCreate" type="Button" parent="PanelPlay/VBox"]
+custom_minimum_size = Vector2(280, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "CREAR SALA"
+
+[node name="BtnJoin" type="Button" parent="PanelPlay/VBox"]
+custom_minimum_size = Vector2(280, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "UNIRSE A SALA"
+
+[node name="BtnBack" type="Button" parent="PanelPlay/VBox"]
+custom_minimum_size = Vector2(280, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "VOLVER"
+
+[node name="PanelJoin" type="CenterContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="PanelJoin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Label" type="Label" parent="PanelJoin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.52, 0.5, 1)
+horizontal_alignment = 1
+text = "IP o código de sala"
+
+[node name="RoomCodeInput" type="LineEdit" parent="PanelJoin/VBox"]
+custom_minimum_size = Vector2(280, 40)
+layout_mode = 2
+placeholder_text = "127.0.0.1"
+alignment = 1
+
+[node name="BtnConnect" type="Button" parent="PanelJoin/VBox"]
+custom_minimum_size = Vector2(280, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "CONECTAR"
+
+[node name="BtnBack" type="Button" parent="PanelJoin/VBox"]
+custom_minimum_size = Vector2(280, 44)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "VOLVER"
+
+[node name="BtnStart" type="Button" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_right = 140.0
+offset_top = -110.0
+offset_bottom = -66.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 20
+text = "INICIAR PARTIDA"
+
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_right = 300.0
+offset_top = -50.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.5, 0.15, 0.1, 1)
+horizontal_alignment = 1
+text = ""

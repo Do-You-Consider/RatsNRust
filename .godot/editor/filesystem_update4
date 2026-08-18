@@ -1,0 +1,5 @@
+res://scenes/game/Game.gd
+res://scenes/menu/MainMenu.gd
+res://scripts/autoload/GameState.gd
+res://scripts/autoload/NetworkManager.gd
+res://scripts/map/MapGenerator.gd
