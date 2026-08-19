@@ -93,6 +93,11 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+	# Red de seguridad anti-caída al vacío
+	if global_position.y < -3.0:
+		global_position.y = 1.0
+		velocity = Vector3.ZERO
+
 
 func _get_input_dir() -> Vector2:
 	var dir := Vector2.ZERO

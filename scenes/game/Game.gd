@@ -9,8 +9,9 @@ const CATCH_RADIUS := 1.6
 @onready var map_generator: MapGenerator = $MapGenerator
 @onready var players_root: Node3D = $Players
 @onready var spawner: MultiplayerSpawner = $PlayerSpawner
-@onready var role_label: Label = $UI/RoleLabel
-@onready var timer_label: Label = $UI/TimerLabel
+@onready var role_label: Label = $UI/HUDContainer/HUDPanel/VBox/RoleLabel
+@onready var timer_label: Label = $UI/HUDContainer/HUDPanel/VBox/TimerLabel
+@onready var status_label: Label = $UI/HUDContainer/HUDPanel/VBox/StatusLabel
 
 var _hiders_caught: Dictionary = {}
 
@@ -24,7 +25,12 @@ func _ready() -> void:
 
 	var my_id := multiplayer.get_unique_id()
 	var role := GameState.get_role(my_id)
-	role_label.text = "SOS EL SEEKER" if role == GameState.Role.SEEKER else "SOS HIDER"
+	if role == GameState.Role.SEEKER:
+		role_label.text = "[ PROTOCOL // SEEKER: HUNT ]"
+		role_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.15))
+	else:
+		role_label.text = "[ OBJECTIVE // HIDER: SURVIVE ]"
+		role_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.55))
 
 
 ## Cada Hider recibe un punto de spawn distinto (map_generator.hider_spawn_points),
@@ -62,7 +68,24 @@ func _process(delta: float) -> void:
 		if GameState.round_time_left <= 0.0:
 			NetworkManager.end_round("hiders")
 
-	timer_label.text = "Tiempo: %d s" % ceil(GameState.round_time_left)
+	var total_secs := int(ceil(GameState.round_time_left))
+	var mins := total_secs / 60
+	var secs := total_secs % 60
+	timer_label.text = "TIME: [ %02d:%02d ]" % [mins, secs]
+
+	var total_hiders := 0
+	var caught_count := 0
+	for child in players_root.get_children():
+		var pid := int(child.name)
+		if GameState.get_role(pid) == GameState.Role.HIDER:
+			total_hiders += 1
+			if _hiders_caught.get(pid, false):
+				caught_count += 1
+	var active_hiders: int = maxi(0, total_hiders - caught_count)
+	if total_hiders > 0:
+		status_label.text = "SPECIMENS: [ %d / %d ACTIVE ]" % [active_hiders, total_hiders]
+	else:
+		status_label.text = "SPECIMENS: [ SCANNING... ]"
 
 
 ## Solo corre en el host: revisa distancia del Seeker a cada Hider vivo.

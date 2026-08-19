@@ -1,8 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://c1game0000001"]
+[gd_scene load_steps=8 format=3 uid="uid://c1game0000001"]
 
 [ext_resource type="Script" path="res://scenes/game/Game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/map/MapGenerator.gd" id="2_mapgen"]
-[ext_resource type="Shader" path="res://scripts/shaders/retro_grain.gdshader" id="3_shader"]
+[ext_resource type="Shader" path="res://scripts/shaders/crt_terminal.gdshader" id="3_shader"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
@@ -19,10 +19,28 @@ glow_enabled = true
 glow_intensity = 0.35
 glow_bloom = 0.05
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud"]
+bg_color = Color(0.05, 0.045, 0.04, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.28, 0.12, 1)
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_size = 4
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1"]
 shader = ExtResource("3_shader")
-shader_parameter/grain_amount = 0.07
-shader_parameter/vignette_strength = 0.55
+shader_parameter/scanline_count = 140.0
+shader_parameter/scanline_intensity = 0.18
+shader_parameter/grain_amount = 0.05
+shader_parameter/vignette_strength = 0.6
+shader_parameter/chromatic_aberration = 0.002
+shader_parameter/flicker_intensity = 0.015
 
 [node name="Game" type="Node3D"]
 script = ExtResource("1_game")
@@ -40,21 +58,59 @@ spawn_path = NodePath("../Players")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="RoleLabel" type="Label" parent="UI"]
-offset_left = 40.0
-offset_top = 40.0
-offset_right = 400.0
-offset_bottom = 90.0
-theme_override_font_sizes/font_size = 32
-text = "..."
+[node name="HUDContainer" type="MarginContainer" parent="UI"]
+offset_left = 10.0
+offset_top = 8.0
+offset_right = 190.0
+offset_bottom = 74.0
 
-[node name="TimerLabel" type="Label" parent="UI"]
-offset_left = 40.0
-offset_top = 90.0
-offset_right = 300.0
-offset_bottom = 130.0
-theme_override_font_sizes/font_size = 24
-text = "..."
+[node name="HUDPanel" type="PanelContainer" parent="UI/HUDContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="VBox" type="VBoxContainer" parent="UI/HUDContainer/HUDPanel"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="SysHeader" type="Label" parent="UI/HUDContainer/HUDPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.48, 0.4, 1)
+theme_override_font_sizes/font_size = 6
+text = "// TELEMETRY // NODE-7777"
+
+[node name="RoleLabel" type="Label" parent="UI/HUDContainer/HUDPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.45, 0.15, 1)
+theme_override_font_sizes/font_size = 9
+text = "[ ROLE: ... ]"
+
+[node name="TimerLabel" type="Label" parent="UI/HUDContainer/HUDPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.82, 0.72, 1)
+theme_override_font_sizes/font_size = 8
+text = "TIME: [ 05:00 ]"
+
+[node name="StatusLabel" type="Label" parent="UI/HUDContainer/HUDPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.6, 0.52, 1)
+theme_override_font_sizes/font_size = 7
+text = "SPECIMENS: [ ALL ACTIVE ]"
+
+[node name="Crosshair" type="CenterContainer" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Dot" type="Label" parent="UI/Crosshair"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.75, 0.68, 0.5)
+theme_override_font_sizes/font_size = 9
+text = "·"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="PostFX" type="ColorRect" parent="UI"]
 material = SubResource("ShaderMaterial_1")
@@ -66,3 +122,4 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(1, 1, 1, 1)
+

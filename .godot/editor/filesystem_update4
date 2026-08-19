@@ -1,1 +1,4 @@
 res://scenes/menu/MainMenu.gd
+res://scripts/map/MapGenerator.gd
+res://scenes/player/Player.gd
+res://scenes/game/Game.gd

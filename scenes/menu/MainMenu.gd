@@ -214,4 +214,3 @@ func _play_sfx(freq: float, duration: float, volume_db_gain: float = -24.0) -> v
 	player.autoplay = true
 	player.finished.connect(player.queue_free)
 	add_child(player)
-
