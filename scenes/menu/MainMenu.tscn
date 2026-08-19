@@ -1,6 +1,114 @@
-[gd_scene load_steps=2 format=3 uid="uid://d0m41nm3nu0000"]
+[gd_scene load_steps=12 format=3 uid="uid://d0m41nm3nu0000"]
 
 [ext_resource type="Script" path="res://scenes/menu/MainMenu.gd" id="1_menu"]
+[ext_resource type="Shader" path="res://scripts/shaders/crt_terminal.gdshader" id="2_shader"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_frame"]
+bg_color = Color(0.06, 0.055, 0.05, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.25, 0.1, 1)
+corner_radius_top_left = 0
+corner_radius_top_right = 0
+corner_radius_bottom_right = 0
+corner_radius_bottom_left = 0
+shadow_color = Color(0, 0, 0, 0.8)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+bg_color = Color(0.12, 0.08, 0.06, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.7, 0.35, 0.15, 1)
+content_margin_left = 6.0
+content_margin_top = 3.0
+content_margin_right = 6.0
+content_margin_bottom = 3.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_norm"]
+bg_color = Color(0.11, 0.1, 0.09, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38, 0.32, 0.26, 1)
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+bg_color = Color(0.78, 0.32, 0.1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.65, 0.3, 1)
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_press"]
+bg_color = Color(0.42, 0.1, 0.06, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.2, 0.1, 1)
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input"]
+bg_color = Color(0.04, 0.035, 0.03, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.65, 0.3, 0.12, 1)
+content_margin_left = 6.0
+content_margin_top = 3.0
+content_margin_right = 6.0
+content_margin_bottom = 3.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_btn"]
+bg_color = Color(0.14, 0.48, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.95, 0.45, 1)
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_btn_hover"]
+bg_color = Color(0.2, 0.72, 0.26, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.7, 1, 0.7, 1)
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_crt"]
+shader = ExtResource("2_shader")
+shader_parameter/scanline_count = 140.0
+shader_parameter/scanline_intensity = 0.2
+shader_parameter/grain_amount = 0.055
+shader_parameter/vignette_strength = 0.65
+shader_parameter/chromatic_aberration = 0.002
+shader_parameter/flicker_intensity = 0.018
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -18,160 +126,266 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.043, 0.039, 0.035, 1)
+color = Color(0.035, 0.03, 0.025, 1)
 
-[node name="Title" type="Label" parent="."]
+[node name="TopHeader" type="HBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -300.0
-offset_right = 300.0
-offset_top = 90.0
-offset_bottom = 160.0
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = 22.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.75, 0.15, 0.1, 1)
-theme_override_font_sizes/font_size = 46
-horizontal_alignment = 1
+
+[node name="SysNodeLabel" type="Label" parent="TopHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.48, 0.42, 1)
+theme_override_font_sizes/font_size = 7
+text = "// TERMINAL: LOCAL_NODE_7777 // RATS_N_RUST_REV2"
+
+[node name="Spacer" type="Control" parent="TopHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SignalLabel" type="Label" parent="TopHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.45, 0.15, 1)
+theme_override_font_sizes/font_size = 7
+text = "[ * SIGNAL: ACTIVE ]"
+
+[node name="CenterArea" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainFrame" type="PanelContainer" parent="CenterArea"]
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_frame")
+
+[node name="Margin" type="MarginContainer" parent="CenterArea/MainFrame"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="CenterArea/MainFrame/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleBox" type="VBoxContainer" parent="CenterArea/MainFrame/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="TitleLabel" type="Label" parent="CenterArea/MainFrame/Margin/VBox/TitleBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.32, 0.12, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 20
 text = "RATS N RUST"
-
-[node name="Subtitle" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -300.0
-offset_right = 300.0
-offset_top = 150.0
-offset_bottom = 180.0
-grow_horizontal = 2
-theme_override_colors/font_color = Color(0.55, 0.52, 0.5, 1)
-theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
-text = "survive. hide. run."
 
-[node name="PanelMain" type="CenterContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBox" type="VBoxContainer" parent="PanelMain"]
+[node name="SubtitleLabel" type="Label" parent="CenterArea/MainFrame/Margin/VBox/TitleBox"]
 layout_mode = 2
-theme_override_constants/separation = 18
-
-[node name="BtnPlay" type="Button" parent="PanelMain/VBox"]
-custom_minimum_size = Vector2(280, 44)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "JUGAR"
-
-[node name="BtnQuit" type="Button" parent="PanelMain/VBox"]
-custom_minimum_size = Vector2(280, 44)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "SALIR"
-
-[node name="PanelPlay" type="CenterContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBox" type="VBoxContainer" parent="PanelPlay"]
-layout_mode = 2
-theme_override_constants/separation = 18
-
-[node name="BtnCreate" type="Button" parent="PanelPlay/VBox"]
-custom_minimum_size = Vector2(280, 44)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "CREAR SALA"
-
-[node name="BtnJoin" type="Button" parent="PanelPlay/VBox"]
-custom_minimum_size = Vector2(280, 44)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "UNIRSE A SALA"
-
-[node name="BtnBack" type="Button" parent="PanelPlay/VBox"]
-custom_minimum_size = Vector2(280, 44)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "VOLVER"
-
-[node name="PanelJoin" type="CenterContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBox" type="VBoxContainer" parent="PanelJoin"]
-layout_mode = 2
-theme_override_constants/separation = 18
-
-[node name="Label" type="Label" parent="PanelJoin/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.52, 0.5, 1)
+theme_override_colors/font_color = Color(0.62, 0.56, 0.48, 1)
+theme_override_font_sizes/font_size = 7
+text = "// PROTOCOL: ASYMMETRIC HAZARD HUNT //"
 horizontal_alignment = 1
-text = "IP o código de sala"
 
-[node name="RoomCodeInput" type="LineEdit" parent="PanelJoin/VBox"]
-custom_minimum_size = Vector2(280, 40)
+[node name="HSeparator" type="HSeparator" parent="CenterArea/MainFrame/Margin/VBox"]
 layout_mode = 2
+
+[node name="ResultBanner" type="PanelContainer" parent="CenterArea/MainFrame/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="ResultLabel" type="Label" parent="CenterArea/MainFrame/Margin/VBox/ResultBanner"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 7
+text = ">>> ROUND TERMINATED <<<"
+horizontal_alignment = 1
+
+[node name="PanelMain" type="VBoxContainer" parent="CenterArea/MainFrame/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnPlay" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelMain"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_color = Color(0.88, 0.84, 0.78, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
+text = "[ 01 // ENTER COMPLEX ]"
+
+[node name="BtnQuit" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelMain"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_color = Color(0.88, 0.84, 0.78, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
+text = "[ 02 // TERMINATE ]"
+
+[node name="PanelPlay" type="VBoxContainer" parent="CenterArea/MainFrame/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="BtnCreate" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelPlay"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_color = Color(0.88, 0.84, 0.78, 1)
+theme_override_font_sizes/font_size = 9
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
+text = "[ HOST FREQUENCY ]"
+
+[node name="BtnJoin" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelPlay"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_color = Color(0.88, 0.84, 0.78, 1)
+theme_override_font_sizes/font_size = 9
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
+text = "[ TUNE FREQUENCY ]"
+
+[node name="BtnBackPlay" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelPlay"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_color = Color(0.65, 0.6, 0.55, 1)
+theme_override_font_sizes/font_size = 8
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
+text = "[ << RETURN ]"
+
+[node name="PanelJoin" type="VBoxContainer" parent="CenterArea/MainFrame/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="JoinInfoLabel" type="Label" parent="CenterArea/MainFrame/Margin/VBox/PanelJoin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.58, 0.5, 1)
+theme_override_font_sizes/font_size = 7
+text = "TARGET NODE IP ADDRESS:"
+horizontal_alignment = 1
+
+[node name="InputBox" type="CenterContainer" parent="CenterArea/MainFrame/Margin/VBox/PanelJoin"]
+layout_mode = 2
+
+[node name="RoomCodeInput" type="LineEdit" parent="CenterArea/MainFrame/Margin/VBox/PanelJoin/InputBox"]
+custom_minimum_size = Vector2(180, 20)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.75, 0.45, 1)
+theme_override_font_sizes/font_size = 9
+theme_override_styles/normal = SubResource("StyleBoxFlat_input")
+text = "127.0.0.1"
 placeholder_text = "127.0.0.1"
 alignment = 1
 
-[node name="BtnConnect" type="Button" parent="PanelJoin/VBox"]
-custom_minimum_size = Vector2(280, 44)
+[node name="BtnConnect" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelJoin"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "CONECTAR"
+theme_override_colors/font_hover_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_color = Color(0.88, 0.84, 0.78, 1)
+theme_override_font_sizes/font_size = 9
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
+text = "[ ESTABLISH UPLINK ]"
 
-[node name="BtnBack" type="Button" parent="PanelJoin/VBox"]
-custom_minimum_size = Vector2(280, 44)
+[node name="BtnBackJoin" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelJoin"]
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "VOLVER"
+theme_override_colors/font_hover_color = Color(0.05, 0.05, 0.05, 1)
+theme_override_colors/font_color = Color(0.65, 0.6, 0.55, 1)
+theme_override_font_sizes/font_size = 8
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
+text = "[ << RETURN ]"
 
-[node name="BtnStart" type="Button" parent="."]
+[node name="LobbyBox" type="PanelContainer" parent="CenterArea/MainFrame/Margin/VBox"]
 visible = false
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_right = 0.5
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = -140.0
-offset_right = 140.0
-offset_top = -110.0
-offset_bottom = -66.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_font_sizes/font_size = 20
-text = "INICIAR PARTIDA"
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="LobbyLabel" type="Label" parent="CenterArea/MainFrame/Margin/VBox/LobbyBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.7, 0.45, 1)
+theme_override_font_sizes/font_size = 7
+text = "HOST IP: 127.0.0.1\nSPECIMENS: [ 1 / 8 ]\nSTATUS: AWAITING CONNECTION"
+horizontal_alignment = 1
+
+[node name="BtnStart" type="Button" parent="CenterArea/MainFrame/Margin/VBox"]
+visible = false
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_color = Color(0.9, 1, 0.9, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/hover = SubResource("StyleBoxFlat_start_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
+theme_override_styles/normal = SubResource("StyleBoxFlat_start_btn")
+text = "[ >>> COMMENCE HUNT <<< ]"
 
 [node name="StatusLabel" type="Label" parent="."]
 layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_right = 0.5
+anchors_preset = 12
 anchor_top = 1.0
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -300.0
-offset_right = 300.0
-offset_top = -50.0
-offset_bottom = -20.0
+offset_top = -24.0
+offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(0.5, 0.15, 0.1, 1)
+theme_override_colors/font_color = Color(0.65, 0.4, 0.2, 1)
+theme_override_font_sizes/font_size = 7
+text = "// READY // AWAITING COMMAND"
 horizontal_alignment = 1
-text = ""
+
+[node name="BottomFooter" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -12.0
+offset_right = -12.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.35, 0.32, 0.3, 1)
+theme_override_font_sizes/font_size = 6
+text = "[ ENET_LAYER // PORT: 7777 // SECURE PROTOCOL ]"
+
+[node name="PostFX" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_crt")
+mouse_filter = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+

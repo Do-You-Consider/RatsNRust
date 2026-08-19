@@ -1,32 +1,50 @@
 extends Control
 
-@onready var panel_main: Control = $PanelMain
-@onready var panel_play: Control = $PanelPlay
-@onready var panel_join: Control = $PanelJoin
+@onready var panel_main: Control = $CenterArea/MainFrame/Margin/VBox/PanelMain
+@onready var panel_play: Control = $CenterArea/MainFrame/Margin/VBox/PanelPlay
+@onready var panel_join: Control = $CenterArea/MainFrame/Margin/VBox/PanelJoin
+@onready var lobby_box: Control = $CenterArea/MainFrame/Margin/VBox/LobbyBox
+@onready var lobby_label: Label = $CenterArea/MainFrame/Margin/VBox/LobbyBox/LobbyLabel
 @onready var status_label: Label = $StatusLabel
+@onready var result_banner: PanelContainer = $CenterArea/MainFrame/Margin/VBox/ResultBanner
+@onready var result_label: Label = $CenterArea/MainFrame/Margin/VBox/ResultBanner/ResultLabel
 
-@onready var btn_play: Button = $PanelMain/VBox/BtnPlay
-@onready var btn_quit: Button = $PanelMain/VBox/BtnQuit
+@onready var btn_play: Button = $CenterArea/MainFrame/Margin/VBox/PanelMain/BtnPlay
+@onready var btn_quit: Button = $CenterArea/MainFrame/Margin/VBox/PanelMain/BtnQuit
 
-@onready var btn_create: Button = $PanelPlay/VBox/BtnCreate
-@onready var btn_join: Button = $PanelPlay/VBox/BtnJoin
-@onready var btn_back_play: Button = $PanelPlay/VBox/BtnBack
+@onready var btn_create: Button = $CenterArea/MainFrame/Margin/VBox/PanelPlay/BtnCreate
+@onready var btn_join: Button = $CenterArea/MainFrame/Margin/VBox/PanelPlay/BtnJoin
+@onready var btn_back_play: Button = $CenterArea/MainFrame/Margin/VBox/PanelPlay/BtnBackPlay
 
-@onready var line_room_code: LineEdit = $PanelJoin/VBox/RoomCodeInput
-@onready var btn_connect: Button = $PanelJoin/VBox/BtnConnect
-@onready var btn_back_join: Button = $PanelJoin/VBox/BtnBack
+@onready var line_room_code: LineEdit = $CenterArea/MainFrame/Margin/VBox/PanelJoin/InputBox/RoomCodeInput
+@onready var btn_connect: Button = $CenterArea/MainFrame/Margin/VBox/PanelJoin/BtnConnect
+@onready var btn_back_join: Button = $CenterArea/MainFrame/Margin/VBox/PanelJoin/BtnBackJoin
 
-@onready var btn_start: Button = $BtnStart
+@onready var btn_start: Button = $CenterArea/MainFrame/Margin/VBox/BtnStart
+@onready var header_signal: Label = $TopHeader/SignalLabel
+
+var _time_passed: float = 0.0
+var _original_btn_texts: Dictionary = {}
 
 
 func _ready() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_setup_button_effects()
 	_show_only(panel_main)
+	lobby_box.visible = false
+	btn_start.visible = false
 
 	if not GameState.last_result.is_empty():
-		status_label.text = "GANARON LOS HIDERS" if GameState.last_result == "hiders" else "GANÓ EL SEEKER"
+		result_banner.visible = true
+		if GameState.last_result == "hiders":
+			result_label.text = ">>> PROTOCOL RESULT: HIDERS SURVIVED <<<"
+			result_label.modulate = Color(0.4, 0.9, 0.5)
+		else:
+			result_label.text = ">>> PROTOCOL RESULT: SEEKER PURGED ALL <<<"
+			result_label.modulate = Color(1.0, 0.25, 0.2)
 		GameState.last_result = ""
 	else:
-		status_label.text = ""
+		result_banner.visible = false
 
 	btn_play.pressed.connect(func(): _show_only(panel_play))
 	btn_quit.pressed.connect(func(): get_tree().quit())
@@ -38,7 +56,7 @@ func _ready() -> void:
 	btn_connect.pressed.connect(_on_connect_pressed)
 	btn_back_join.pressed.connect(func(): _show_only(panel_play))
 
-	btn_start.pressed.connect(func(): NetworkManager.start_game())
+	btn_start.pressed.connect(_on_start_pressed)
 
 	NetworkManager.connection_failed.connect(_on_connection_failed)
 	NetworkManager.server_created.connect(_on_server_created)
@@ -46,48 +64,154 @@ func _ready() -> void:
 	NetworkManager.player_disconnected.connect(_on_player_disconnected)
 
 
+func _process(delta: float) -> void:
+	_time_passed += delta
+	if int(_time_passed * 2.0) % 2 == 0:
+		header_signal.text = "[ * SIGNAL: ACTIVE ]"
+		header_signal.modulate = Color(0.85, 0.45, 0.15)
+	else:
+		header_signal.text = "[ o SIGNAL: ACTIVE ]"
+		header_signal.modulate = Color(0.5, 0.3, 0.15)
+
+
 func _show_only(panel: Control) -> void:
-	status_label.text = ""
+	status_label.text = "// READY // AWAITING COMMAND"
 	for p in [panel_main, panel_play, panel_join]:
-		p.visible = (p == panel)
+		if p != null:
+			p.visible = (p == panel)
+	if panel != null:
+		lobby_box.visible = false
+		btn_start.visible = false
 
 
 func _on_create_pressed() -> void:
 	var ok := NetworkManager.create_room()
-	if not ok:
-		status_label.text = "No se pudo crear la sala."
+	if ok:
+		_show_only(null)
+		lobby_box.visible = true
+		_update_lobby_ui()
+	else:
+		status_label.text = "[ ERROR // FAILED TO BIND PORT 7777 ]"
 
 
 func _on_connect_pressed() -> void:
 	var address := line_room_code.text.strip_edges()
 	if address.is_empty():
 		address = "127.0.0.1"
-	status_label.text = "Conectando a %s..." % address
+	status_label.text = "[ TRANSMITTING UPLINK TO %s... ]" % address
 	NetworkManager.join_room(address)
 
 
 func _on_connection_failed() -> void:
-	status_label.text = "No se pudo conectar a la sala."
+	status_label.text = "[ CONNECTION ABORTED // NO RESPONSE ]"
 
 
 func _on_server_created() -> void:
-	status_label.text = "Sala creada. Código: %s" % NetworkManager.get_local_ip()
-	_update_start_button()
+	status_label.text = "[ TERMINAL HOSTED // BROADCASTING ]"
+	_update_lobby_ui()
 
 
 func _on_player_connected(_id: int) -> void:
-	status_label.text = "Jugador conectado."
-	_update_start_button()
+	status_label.text = "[ NEW SPECIMEN DETECTED // NODE CONNECTED ]"
+	_play_sfx(440.0, 0.04, -22.0)
+	_update_lobby_ui()
 
 
 func _on_player_disconnected(_id: int) -> void:
-	status_label.text = "Jugador desconectado."
-	_update_start_button()
+	status_label.text = "[ WARNING // SPECIMEN DISCONNECTED ]"
+	_update_lobby_ui()
 
 
-## El botón de iniciar solo lo ve el host, y solo cuando hay al menos
-## otro jugador conectado (multiplayer.get_peers() no incluye al host mismo).
-func _update_start_button() -> void:
-	var is_host := multiplayer.multiplayer_peer != null and multiplayer.is_server()
-	var enough_players := multiplayer.get_peers().size() >= 1
-	btn_start.visible = is_host and enough_players
+func _on_start_pressed() -> void:
+	_play_sfx(120.0, 0.08, -18.0)
+	status_label.text = "[ COMMENCING HUNT... INITIALIZING CELLS ]"
+	NetworkManager.start_game()
+
+
+func _update_lobby_ui() -> void:
+	if multiplayer.multiplayer_peer == null:
+		return
+
+	var is_host := multiplayer.is_server()
+	var count := multiplayer.get_peers().size() + 1
+	var ip := NetworkManager.get_local_ip() if is_host else "CONNECTED"
+
+	lobby_label.text = "HOST IP: %s\nSPECIMENS: [ %d / %d ]\nSTATUS: %s" % [
+		ip,
+		count,
+		NetworkManager.MAX_PLAYERS,
+		"READY TO LAUNCH" if count >= 2 else "WAITING FOR PLAYERS (MIN 2)"
+	]
+
+	btn_start.visible = is_host and (count >= 2)
+
+
+func _setup_button_effects() -> void:
+	var buttons := [btn_play, btn_quit, btn_create, btn_join, btn_back_play, btn_connect, btn_back_join, btn_start]
+	for btn in buttons:
+		if btn == null:
+			continue
+		_original_btn_texts[btn] = btn.text
+		btn.mouse_entered.connect(_on_btn_mouse_entered.bind(btn))
+		btn.mouse_exited.connect(_on_btn_mouse_exited.bind(btn))
+		btn.pressed.connect(_on_btn_pressed.bind(btn))
+
+
+var _last_sfx_time: float = 0.0
+
+
+func _on_btn_mouse_entered(btn: Button) -> void:
+	_play_sfx(320.0, 0.02, -26.0)
+	var orig: String = _original_btn_texts.get(btn, btn.text)
+	btn.text = "> %s <" % orig
+
+
+func _on_btn_mouse_exited(btn: Button) -> void:
+	var orig: String = _original_btn_texts.get(btn, btn.text)
+	btn.text = orig
+
+
+func _on_btn_pressed(_btn: Button) -> void:
+	_play_sfx(140.0, 0.04, -20.0)
+
+
+## Generador de sonido suave y atenuado (16-bit PCM, frecuencias cálidas y volumen bajo)
+func _play_sfx(freq: float, duration: float, volume_db_gain: float = -24.0) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _last_sfx_time < 0.05:
+		return # Evita acumulación de sonidos si se mueve rápido el cursor
+	_last_sfx_time = now
+
+	var sample_rate := 22050
+	var num_samples := int(sample_rate * duration)
+	var data := PackedByteArray()
+	data.resize(num_samples * 2)
+
+	var phase := 0.0
+	var phase_step := (freq * TAU) / float(sample_rate)
+
+	for i in num_samples:
+		var t: float = float(i) / float(num_samples)
+		var attack: float = minf(1.0, float(i) / 15.0)
+		var decay: float = pow(1.0 - t, 4.5)
+		var sample: float = sin(phase) * attack * decay * 0.3
+		var int16_val: int = int(clampf(sample, -1.0, 1.0) * 32767.0)
+
+		var idx: int = i * 2
+		data[idx] = int16_val & 0xFF
+		data[idx + 1] = (int16_val >> 8) & 0xFF
+		phase += phase_step
+
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = sample_rate
+	wav.stereo = false
+	wav.data = data
+
+	var player := AudioStreamPlayer.new()
+	player.stream = wav
+	player.volume_db = volume_db_gain
+	player.autoplay = true
+	player.finished.connect(player.queue_free)
+	add_child(player)
+
