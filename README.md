@@ -1,2 +1,2 @@
 # RatsNRust
-V2 del juego Hide And Seek
+Juego de Hide And Seek y Pilladitas hecho en Godot
