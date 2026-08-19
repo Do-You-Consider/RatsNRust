@@ -1,7 +1,7 @@
 extends Node3D
 ## Orquesta la partida: genera el mapa (con la seed que mandó el host),
 ## spawnea el jugador de cada peer vía MultiplayerSpawner, chequea la
-## condición de victoria (host) y actualiza el HUD local.
+## condición de victoria (host) y actualiza el HUD local simplificado.
 
 const PlayerScene := preload("res://scenes/player/Player.tscn")
 const CATCH_RADIUS := 1.6
@@ -9,9 +9,13 @@ const CATCH_RADIUS := 1.6
 @onready var map_generator: MapGenerator = $MapGenerator
 @onready var players_root: Node3D = $Players
 @onready var spawner: MultiplayerSpawner = $PlayerSpawner
-@onready var role_label: Label = $UI/HUDContainer/HUDPanel/VBox/RoleLabel
-@onready var timer_label: Label = $UI/HUDContainer/HUDPanel/VBox/TimerLabel
-@onready var status_label: Label = $UI/HUDContainer/HUDPanel/VBox/StatusLabel
+
+@onready var timer_label: Label = $UI/TopHUD/TimerLabel
+@onready var status_label: Label = $UI/TopHUD/StatusLabel
+@onready var intro_banner: CenterContainer = $UI/IntroBanner
+@onready var intro_role_label: Label = $UI/IntroBanner/VBox/RoleTitle
+@onready var intro_obj_label: Label = $UI/IntroBanner/VBox/RoleObjective
+@onready var role_badge_label: Label = $UI/RoleBadge/RoleLabel
 
 var _hiders_caught: Dictionary = {}
 
@@ -23,19 +27,36 @@ func _ready() -> void:
 	if multiplayer.is_server():
 		_spawn_all_players()
 
+	_setup_hud()
+
+
+func _setup_hud() -> void:
 	var my_id := multiplayer.get_unique_id()
 	var role := GameState.get_role(my_id)
+
 	if role == GameState.Role.SEEKER:
-		role_label.text = "[ SOS EL COBRADOR // CAZÁ A LAS RATAS ]"
-		role_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.15))
+		intro_role_label.text = "ERES EL COBRADOR"
+		intro_role_label.modulate = Color(1.0, 0.28, 0.18)
+		intro_obj_label.text = "CAZA A TODAS LAS RATAS ANTES DE QUE SE AGOTE EL TIEMPO"
+		role_badge_label.text = "[ COBRADOR ]"
+		role_badge_label.modulate = Color(1.0, 0.35, 0.2)
 	else:
-		role_label.text = "[ SOS UNA RATA // ESCONDETE Y ZAFÁ ]"
-		role_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.55))
+		intro_role_label.text = "ERES UNA RATA"
+		intro_role_label.modulate = Color(0.4, 0.9, 0.55)
+		intro_obj_label.text = "ESCONDETE Y SOBREVIVE HASTA EL FINAL DE LA RONDA"
+		role_badge_label.text = "[ RATA ]"
+		role_badge_label.modulate = Color(0.4, 0.9, 0.55)
+
+	# Animación de desvanecimiento suave del banner de inicio (fade-out a los 2.5 segundos)
+	intro_banner.modulate = Color(1, 1, 1, 1)
+	var tween := create_tween()
+	tween.tween_interval(2.5)
+	tween.tween_property(intro_banner, "modulate:a", 0.0, 0.8)
+	tween.tween_callback(func(): intro_banner.visible = false)
 
 
 ## Cada Hider recibe un punto de spawn distinto (map_generator.hider_spawn_points),
-## el Seeker spawnea en su propio punto (opuesto en el laberinto). Con esto se
-## acabó el problema de todos los Hiders apilados en el mismo lugar.
+## el Seeker spawnea en su propio punto (opuesto en el laberinto).
 func _spawn_all_players() -> void:
 	var ids: Array = [1]
 	ids.append_array(multiplayer.get_peers())
@@ -71,7 +92,12 @@ func _process(delta: float) -> void:
 	var total_secs := int(ceil(GameState.round_time_left))
 	var mins := total_secs / 60
 	var secs := total_secs % 60
-	timer_label.text = "POZO EN JUEGO: [ %02d:%02d ]" % [mins, secs]
+	timer_label.text = "%02d:%02d" % [mins, secs]
+
+	if total_secs <= 30:
+		timer_label.modulate = Color(1.0, 0.3, 0.2)
+	else:
+		timer_label.modulate = Color(0.9, 0.72, 0.35)
 
 	var total_hiders := 0
 	var caught_count := 0
@@ -83,9 +109,9 @@ func _process(delta: float) -> void:
 				caught_count += 1
 	var active_hiders: int = maxi(0, total_hiders - caught_count)
 	if total_hiders > 0:
-		status_label.text = "RATAS EN JUEGO: [ %d / %d VIVAS ]" % [active_hiders, total_hiders]
+		status_label.text = "RATAS VIVAS: %d / %d" % [active_hiders, total_hiders]
 	else:
-		status_label.text = "BUSCANDO RATAS EN EL GALPÓN..."
+		status_label.text = "RATAS VIVAS: --"
 
 
 ## Solo corre en el host: revisa distancia del Seeker a cada Hider vivo.

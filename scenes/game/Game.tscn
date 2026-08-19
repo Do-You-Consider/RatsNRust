@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://c1game0000001"]
+[gd_scene load_steps=7 format=3 uid="uid://c1game0000001"]
 
 [ext_resource type="Script" path="res://scenes/game/Game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/map/MapGenerator.gd" id="2_mapgen"]
@@ -19,28 +19,14 @@ glow_enabled = true
 glow_intensity = 0.35
 glow_bloom = 0.05
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud"]
-bg_color = Color(0.05, 0.045, 0.04, 0.88)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.55, 0.28, 0.12, 1)
-content_margin_left = 8.0
-content_margin_top = 6.0
-content_margin_right = 8.0
-content_margin_bottom = 6.0
-shadow_color = Color(0, 0, 0, 0.7)
-shadow_size = 4
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1"]
 shader = ExtResource("3_shader")
 shader_parameter/scanline_count = 140.0
-shader_parameter/scanline_intensity = 0.18
-shader_parameter/grain_amount = 0.05
-shader_parameter/vignette_strength = 0.6
-shader_parameter/chromatic_aberration = 0.002
-shader_parameter/flicker_intensity = 0.015
+shader_parameter/scanline_intensity = 0.15
+shader_parameter/grain_amount = 0.04
+shader_parameter/vignette_strength = 0.55
+shader_parameter/chromatic_aberration = 0.0015
+shader_parameter/flicker_intensity = 0.012
 
 [node name="Game" type="Node3D"]
 script = ExtResource("1_game")
@@ -58,43 +44,80 @@ spawn_path = NodePath("../Players")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="HUDContainer" type="MarginContainer" parent="UI"]
-offset_left = 10.0
+[node name="TopHUD" type="VBoxContainer" parent="UI"]
+anchors_preset = 10
+anchor_right = 1.0
 offset_top = 8.0
-offset_right = 190.0
-offset_bottom = 74.0
+offset_bottom = 36.0
+grow_horizontal = 2
+theme_override_constants/separation = 1
 
-[node name="HUDPanel" type="PanelContainer" parent="UI/HUDContainer"]
+[node name="TimerLabel" type="Label" parent="UI/TopHUD"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+theme_override_colors/font_color = Color(0.9, 0.72, 0.35, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 14
+text = "05:00"
+horizontal_alignment = 1
 
-[node name="VBox" type="VBoxContainer" parent="UI/HUDContainer/HUDPanel"]
+[node name="StatusLabel" type="Label" parent="UI/TopHUD"]
 layout_mode = 2
-theme_override_constants/separation = 2
-
-[node name="SysHeader" type="Label" parent="UI/HUDContainer/HUDPanel/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.55, 0.48, 0.4, 1)
-theme_override_font_sizes/font_size = 6
-text = "// CIRCUITO CERRADO // EL AGUANTADERO //"
-
-[node name="RoleLabel" type="Label" parent="UI/HUDContainer/HUDPanel/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.45, 0.15, 1)
-theme_override_font_sizes/font_size = 8
-text = "[ ROL: ... ]"
-
-[node name="TimerLabel" type="Label" parent="UI/HUDContainer/HUDPanel/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.82, 0.72, 1)
-theme_override_font_sizes/font_size = 8
-text = "POZO EN JUEGO: [ 05:00 ]"
-
-[node name="StatusLabel" type="Label" parent="UI/HUDContainer/HUDPanel/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.65, 0.6, 0.52, 1)
+theme_override_colors/font_color = Color(0.68, 0.64, 0.58, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 7
-text = "RATAS EN JUEGO: [ TODAS VIVAS ]"
+text = "RATAS VIVAS: -- / --"
+horizontal_alignment = 1
+
+[node name="IntroBanner" type="CenterContainer" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/IntroBanner"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RoleTitle" type="Label" parent="UI/IntroBanner/VBox"]
+layout_mode = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 18
+text = "[ ROL ]"
+horizontal_alignment = 1
+
+[node name="RoleObjective" type="Label" parent="UI/IntroBanner/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.82, 0.76, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 8
+text = "OBJETIVO DE LA PARTIDA"
+horizontal_alignment = 1
+
+[node name="RoleBadge" type="MarginContainer" parent="UI"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -20.0
+offset_right = 100.0
+grow_vertical = 0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_bottom = 6
+
+[node name="RoleLabel" type="Label" parent="UI/RoleBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.7, 0.62, 1)
+theme_override_font_sizes/font_size = 7
+text = "[ ROL ]"
 
 [node name="Crosshair" type="CenterContainer" parent="UI"]
 anchors_preset = 15
@@ -106,7 +129,7 @@ mouse_filter = 2
 
 [node name="Dot" type="Label" parent="UI/Crosshair"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.75, 0.68, 0.5)
+theme_override_colors/font_color = Color(0.85, 0.82, 0.78, 0.45)
 theme_override_font_sizes/font_size = 9
 text = "·"
 horizontal_alignment = 1
@@ -122,4 +145,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(1, 1, 1, 1)
+
 
