@@ -127,11 +127,32 @@ func _init_palette() -> void:
 	mat_fire_orange.emission_energy_multiplier = 3.5
 
 
+## Qué sala (con todos sus props) cae en qué posición del grid, y qué puertas
+## entre salas están abiertas o cerradas, se decide con la seed -- así cada
+## partida tiene un layout distinto sin perder el detalle hecho a mano.
+var _room_positions: Dictionary = {}
+var _door_open: Dictionary = {}
+
+const GRID_POSITIONS_COUNT := 3 # grid de 3x3 salas
+const ROOM_HIDE_OFFSETS := {
+	"gambling": Vector3(3.6, 0.8, 3.6),
+	"bar": Vector3(3.2, 0.8, 3.2),
+	"boiler": Vector3(3.2, 0.8, 3.2),
+	"cargo": Vector3(0.0, 0.8, 0.0),
+	"restrooms": Vector3(-2.7, 0.8, -4.2),
+	"workshop": Vector3(-3.2, 0.8, 0.0),
+	"poker": Vector3(0.0, 0.8, 0.0),
+	"vault": Vector3(1.8, 0.8, 1.8),
+}
+
+
 func generate(seed_value: int = -1) -> void:
 	for c in get_children():
 		c.queue_free()
 	hider_spawn_points.clear()
 	seeker_spawn_point = Vector3.ZERO
+	_room_positions.clear()
+	_door_open.clear()
 
 	if seed_value == -1:
 		rng.randomize()
@@ -157,36 +178,138 @@ func _build_monolithic_facility() -> void:
 	_create_box(Vector3(-half_total, wall_height * 0.5, 0), Vector3(thick, wall_height, total_size + thick * 2.0), mat_concrete_wall)
 	_create_box(Vector3(half_total, wall_height * 0.5, 0), Vector3(thick, wall_height, total_size + thick * 2.0), mat_concrete_wall)
 
-	# 3. TABIQUES INTERNOS DIVISORIOS CON PUERTAS
+	# 3. CONECTIVIDAD RANDOM ENTRE SALAS (spanning tree + loops extra) y
+	#    TABIQUES INTERNOS que respetan esa conectividad (puerta o muro sólido)
+	_generate_connectivity()
 	_build_internal_partitions()
 
 	# 4. CONDUCTOS DE VENTILACIÓN Y TUBERÍAS SUSPENDIDAS
 	_build_infrastructure()
 
-	# 5. SALAS TEMÁTICAS INDIVIDUALES CON PROPS 3D DETALLADOS
-	_build_gambling_arena(Vector3(0, 0, 0))                          # (0, 0)
-	_build_grimy_bar(Vector3(-room_size, 0, 0))                      # (-1, 0)
-	_build_boiler_facility(Vector3(room_size, 0, 0))                 # (1, 0)
-	_build_cargo_storage(Vector3(0, 0, -room_size))                  # (0, -1)
-	_build_restrooms_complex(Vector3(0, 0, room_size))               # (0, 1)
-	_build_security_airlock(Vector3(-room_size, 0, -room_size))      # (-1, -1)
-	_build_maintenance_workshop(Vector3(room_size, 0, -room_size))   # (1, -1)
-	_build_vip_poker_lounge(Vector3(-room_size, 0, room_size))       # (-1, 1)
-	_build_reinforced_vault(Vector3(room_size, 0, room_size))        # (1, 1)
+	# 5. SALAS TEMÁTICAS EN POSICIONES RANDOM DEL GRID (mismos props de siempre,
+	#    layout distinto en cada partida)
+	_place_rooms()
 
-	# 6. CONFIGURAR PUNTOS DE SPAWN ESTRATÉGICOS
+	# 6. CONFIGURAR PUNTOS DE SPAWN ESTRATÉGICOS (según dónde cayó cada sala)
 	_setup_tactical_spawns()
 
 
-## Tabiques interiores con puertas entre las 9 salas
+## Determinista con la seed: recorre el grid de 3x3 salas con backtracking
+## (spanning tree, garantiza que todo esté conectado) y después abre loops
+## extra al azar para que no sea un único camino obligatorio.
+func _generate_connectivity() -> void:
+	var visited: Dictionary = {}
+	var start := Vector2i(0, 0)
+	visited[start] = true
+	var stack: Array = [start]
+
+	while not stack.is_empty():
+		var current: Vector2i = stack[-1]
+		var neighbors := _unvisited_grid_neighbors(current, visited)
+		if neighbors.is_empty():
+			stack.pop_back()
+			continue
+		var next: Vector2i = neighbors[rng.randi_range(0, neighbors.size() - 1)]
+		_open_door(current, next)
+		visited[next] = true
+		stack.append(next)
+
+	# Loops extra: con varias salas grandes conviene más probabilidad que en
+	# el laberinto viejo de celdas chicas, si no se siente demasiado cerrado.
+	for gx in GRID_POSITIONS_COUNT:
+		for gy in GRID_POSITIONS_COUNT:
+			var cell := Vector2i(gx, gy)
+			for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+				var n: Vector2i = cell + d
+				if n.x >= GRID_POSITIONS_COUNT or n.y >= GRID_POSITIONS_COUNT:
+					continue
+				if not _is_door_open(cell, n) and rng.randf() < 0.35:
+					_open_door(cell, n)
+
+
+func _unvisited_grid_neighbors(cell: Vector2i, visited: Dictionary) -> Array:
+	var result: Array = []
+	var deltas := [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]
+	for d in deltas:
+		var n: Vector2i = cell + d
+		if n.x >= 0 and n.x < GRID_POSITIONS_COUNT and n.y >= 0 and n.y < GRID_POSITIONS_COUNT and not visited.has(n):
+			result.append(n)
+	return result
+
+
+func _open_door(a: Vector2i, b: Vector2i) -> void:
+	_door_open["%d,%d,%d,%d" % [a.x, a.y, b.x, b.y]] = true
+	_door_open["%d,%d,%d,%d" % [b.x, b.y, a.x, a.y]] = true
+
+
+func _is_door_open(a: Vector2i, b: Vector2i) -> bool:
+	return _door_open.get("%d,%d,%d,%d" % [a.x, a.y, b.x, b.y], false)
+
+
+## Fisher-Yates con NUESTRA rng seedeada (no Array.shuffle(), que usa el RNG
+## global y daría un resultado distinto en cada cliente -- todos los peers
+## tienen que construir exactamente el mismo mapa a partir de la misma seed).
+func _seeded_shuffle(arr: Array) -> void:
+	for i in range(arr.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var tmp = arr[i]
+		arr[i] = arr[j]
+		arr[j] = tmp
+
+
+## Las 9 salas (con todos sus props tal cual las hizo cada builder) se
+## reparten en posiciones random del grid 3x3 -- mismo contenido artesanal,
+## layout distinto en cada partida.
+func _place_rooms() -> void:
+	var grid_positions: Array[Vector3] = [
+		Vector3(0, 0, 0), Vector3(-room_size, 0, 0), Vector3(room_size, 0, 0),
+		Vector3(0, 0, -room_size), Vector3(0, 0, room_size),
+		Vector3(-room_size, 0, -room_size), Vector3(room_size, 0, -room_size),
+		Vector3(-room_size, 0, room_size), Vector3(room_size, 0, room_size),
+	]
+	_seeded_shuffle(grid_positions)
+
+	var room_keys := ["gambling", "bar", "boiler", "cargo", "restrooms", "security", "workshop", "poker", "vault"]
+
+	for i in room_keys.size():
+		var key: String = room_keys[i]
+		var pos: Vector3 = grid_positions[i]
+		_room_positions[key] = pos
+		match key:
+			"gambling":
+				_build_gambling_arena(pos)
+			"bar":
+				_build_grimy_bar(pos)
+			"boiler":
+				_build_boiler_facility(pos)
+			"cargo":
+				_build_cargo_storage(pos)
+			"restrooms":
+				_build_restrooms_complex(pos)
+			"security":
+				_build_security_airlock(pos)
+			"workshop":
+				_build_maintenance_workshop(pos)
+			"poker":
+				_build_vip_poker_lounge(pos)
+			"vault":
+				_build_reinforced_vault(pos)
+
+
+## Tabiques interiores entre las 9 salas: puerta con marco si la conectividad
+## random dice que ese paso está abierto, o muro sólido si está cerrado.
 func _build_internal_partitions() -> void:
 	var door_w := 2.6
 	var door_h := 2.5
 	var wall_thick := 0.3
+	var coord_to_grid := {-room_size: 0, 0.0: 1, room_size: 2}
 
 	# Divisiones Verticales en X = -room_size/2 (-6m) y X = +room_size/2 (+6m)
 	for x_line in [-room_size * 0.5, room_size * 0.5]:
+		var gx_left: int = 0 if x_line < 0.0 else 1
 		for z_room in [-room_size, 0.0, room_size]:
+			var gy: int = coord_to_grid[z_room]
+			var is_door: bool = _is_door_open(Vector2i(gx_left, gy), Vector2i(gx_left + 1, gy))
 			_create_partition_wall(
 				Vector3(x_line, 0, z_room),
 				room_size,
@@ -195,12 +318,16 @@ func _build_internal_partitions() -> void:
 				door_h,
 				wall_thick,
 				true, # vertical
-				mat_concrete_wall
+				mat_concrete_wall,
+				is_door
 			)
 
 	# Divisiones Horizontales en Z = -room_size/2 (-6m) y Z = +room_size/2 (+6m)
 	for z_line in [-room_size * 0.5, room_size * 0.5]:
+		var gy_top: int = 0 if z_line < 0.0 else 1
 		for x_room in [-room_size, 0.0, room_size]:
+			var gx: int = coord_to_grid[x_room]
+			var is_door: bool = _is_door_open(Vector2i(gx, gy_top), Vector2i(gx, gy_top + 1))
 			_create_partition_wall(
 				Vector3(x_room, 0, z_line),
 				room_size,
@@ -209,12 +336,20 @@ func _build_internal_partitions() -> void:
 				door_h,
 				wall_thick,
 				false, # horizontal
-				mat_concrete_wall
+				mat_concrete_wall,
+				is_door
 			)
 
 
-## Muro divisorio con vano y marco de puerta
-func _create_partition_wall(center: Vector3, length: float, height: float, door_w: float, door_h: float, thick: float, vertical: bool, mat: StandardMaterial3D) -> void:
+## Muro divisorio: con vano y marco de puerta si is_door, o macizo si no.
+func _create_partition_wall(center: Vector3, length: float, height: float, door_w: float, door_h: float, thick: float, vertical: bool, mat: StandardMaterial3D, is_door: bool = true) -> void:
+	if not is_door:
+		if vertical:
+			_create_box(center + Vector3(0, height * 0.5, 0), Vector3(thick, height, length), mat)
+		else:
+			_create_box(center + Vector3(0, height * 0.5, 0), Vector3(length, height, thick), mat)
+		return
+
 	var side_len := (length - door_w) * 0.5
 	var side_offset := (length + door_w) * 0.25
 	var lintel_h := height - door_h
@@ -519,22 +654,17 @@ func _create_fluorescent_fixture(pos: Vector3, color: Color, energy: float, ligh
 # SPAWN TÁCTICO
 # ==============================================================================
 
+## Los puntos de escondite son los mismos de siempre (tras el pilar, el sofá,
+## los barriles, etc.) pero ahora se ubican donde haya caído cada sala esta
+## partida, porque el layout completo se randomiza con la seed.
 func _setup_tactical_spawns() -> void:
-	# El Seeker aparece en la Oficina de Seguridad / Entrada
-	seeker_spawn_point = Vector3(-room_size, 0.8, -room_size)
+	# El Seeker aparece en la sala que quedó asignada como Oficina de Seguridad
+	seeker_spawn_point = _room_positions["security"] + Vector3(0, 0.8, 0)
 
-	# Los Hiders aparecen estratégicamente ocultos por las distintas salas
-	hider_spawn_points = [
-		Vector3(0, 0.8, 0) + Vector3(3.6, 0, 3.6),                    # Salón Ruleta: tras pilar
-		Vector3(-room_size, 0.8, 0) + Vector3(3.2, 0, 3.2),            # Bar: tras el sofá VIP
-		Vector3(room_size, 0.8, 0) + Vector3(3.2, 0, 3.2),             # Calderas: tras los barriles
-		Vector3(0, 0.8, room_size) + Vector3(-2.7, 0, -4.2),           # Baños: dentro del cubículo
-		Vector3(0, 0.8, -room_size) + Vector3(0, 0, 0),                 # Almacén: pasillo entre estantes
-		Vector3(room_size, 0.8, -room_size) + Vector3(-3.2, 0, 0),      # Taller: tras la mesa
-		Vector3(-room_size, 0.8, room_size) + Vector3(0, 0, 0),         # Sala VIP Póker
-		Vector3(room_size, 0.8, room_size) + Vector3(1.8, 0, 1.8),     # Bóveda: tras las cajas
-	]
-	hider_spawn_points.shuffle()
+	hider_spawn_points.clear()
+	for key in ROOM_HIDE_OFFSETS.keys():
+		hider_spawn_points.append(_room_positions[key] + ROOM_HIDE_OFFSETS[key])
+	_seeded_shuffle(hider_spawn_points)
 
 
 # ==============================================================================

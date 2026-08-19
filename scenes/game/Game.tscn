@@ -2,7 +2,8 @@
 
 [ext_resource type="Script" path="res://scenes/game/Game.gd" id="1_game"]
 [ext_resource type="Script" path="res://scripts/map/MapGenerator.gd" id="2_mapgen"]
-[ext_resource type="Shader" path="res://scripts/shaders/crt_terminal.gdshader" id="3_shader"]
+[ext_resource type="Shader" path="res://scripts/shaders/ps2_gameplay.gdshader" id="3_shader"]
+[ext_resource type="Script" path="res://scripts/audio/AmbientAudio.gd" id="4_ambient"]
 
 [sub_resource type="Environment" id="Environment_1"]
 background_mode = 1
@@ -21,12 +22,9 @@ glow_bloom = 0.05
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1"]
 shader = ExtResource("3_shader")
-shader_parameter/scanline_count = 140.0
-shader_parameter/scanline_intensity = 0.15
-shader_parameter/grain_amount = 0.04
-shader_parameter/vignette_strength = 0.55
-shader_parameter/chromatic_aberration = 0.0015
-shader_parameter/flicker_intensity = 0.012
+shader_parameter/dither_strength = 0.1
+shader_parameter/color_levels = 20.0
+shader_parameter/vignette_strength = 0.3
 
 [node name="Game" type="Node3D"]
 script = ExtResource("1_game")
@@ -36,6 +34,9 @@ environment = SubResource("Environment_1")
 
 [node name="MapGenerator" type="Node3D" parent="."]
 script = ExtResource("2_mapgen")
+
+[node name="AmbientAudio" type="Node" parent="."]
+script = ExtResource("4_ambient")
 
 [node name="Players" type="Node3D" parent="."]
 
