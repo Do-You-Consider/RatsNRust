@@ -142,7 +142,7 @@ grow_horizontal = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.48, 0.42, 1)
 theme_override_font_sizes/font_size = 7
-text = "// TERMINAL: LOCAL_NODE_7777 // RATS_N_RUST_REV2"
+text = "// RATS N RUST // MULTIPLAYER // V1.0"
 
 [node name="Spacer" type="Control" parent="TopHeader"]
 layout_mode = 2
@@ -152,7 +152,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.45, 0.15, 1)
 theme_override_font_sizes/font_size = 7
-text = "[ * SIGNAL: ACTIVE ]"
+text = "[ * EN LÍNEA ]"
 
 [node name="CenterArea" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -196,7 +196,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.62, 0.56, 0.48, 1)
 theme_override_font_sizes/font_size = 7
-text = "// PROTOCOL: ASYMMETRIC HAZARD HUNT //"
+text = "// JUEGO CLANDESTINO DE APUESTAS //"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="CenterArea/MainFrame/Margin/VBox"]
@@ -210,7 +210,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
 [node name="ResultLabel" type="Label" parent="CenterArea/MainFrame/Margin/VBox/ResultBanner"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 7
-text = ">>> ROUND TERMINATED <<<"
+text = ">>> FIN DE LA RONDA <<<"
 horizontal_alignment = 1
 
 [node name="PanelMain" type="VBoxContainer" parent="CenterArea/MainFrame/Margin/VBox"]
@@ -226,7 +226,7 @@ theme_override_font_sizes/font_size = 10
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
-text = "[ 01 // ENTER COMPLEX ]"
+text = "[ 01 // JUGAR ]"
 
 [node name="BtnQuit" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelMain"]
 custom_minimum_size = Vector2(0, 22)
@@ -237,7 +237,7 @@ theme_override_font_sizes/font_size = 10
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
-text = "[ 02 // TERMINATE ]"
+text = "[ 02 // SALIR ]"
 
 [node name="PanelPlay" type="VBoxContainer" parent="CenterArea/MainFrame/Margin/VBox"]
 visible = false
@@ -253,7 +253,7 @@ theme_override_font_sizes/font_size = 9
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
-text = "[ HOST FREQUENCY ]"
+text = "[ CREAR SALA (HOST) ]"
 
 [node name="BtnJoin" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelPlay"]
 custom_minimum_size = Vector2(0, 20)
@@ -264,7 +264,7 @@ theme_override_font_sizes/font_size = 9
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
-text = "[ TUNE FREQUENCY ]"
+text = "[ UNIRSE A SALA ]"
 
 [node name="BtnBackPlay" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelPlay"]
 custom_minimum_size = Vector2(0, 18)
@@ -275,7 +275,7 @@ theme_override_font_sizes/font_size = 8
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
-text = "[ << RETURN ]"
+text = "[ << VOLVER ]"
 
 [node name="PanelJoin" type="VBoxContainer" parent="CenterArea/MainFrame/Margin/VBox"]
 visible = false
@@ -286,7 +286,7 @@ theme_override_constants/separation = 5
 layout_mode = 2
 theme_override_colors/font_color = Color(0.65, 0.58, 0.5, 1)
 theme_override_font_sizes/font_size = 7
-text = "TARGET NODE IP ADDRESS:"
+text = "DIRECCIÓN IP DEL HOST:"
 horizontal_alignment = 1
 
 [node name="InputBox" type="CenterContainer" parent="CenterArea/MainFrame/Margin/VBox/PanelJoin"]
@@ -311,7 +311,7 @@ theme_override_font_sizes/font_size = 9
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
-text = "[ ESTABLISH UPLINK ]"
+text = "[ CONECTAR ]"
 
 [node name="BtnBackJoin" type="Button" parent="CenterArea/MainFrame/Margin/VBox/PanelJoin"]
 custom_minimum_size = Vector2(0, 18)
@@ -322,7 +322,7 @@ theme_override_font_sizes/font_size = 8
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_norm")
-text = "[ << RETURN ]"
+text = "[ << VOLVER ]"
 
 [node name="LobbyBox" type="PanelContainer" parent="CenterArea/MainFrame/Margin/VBox"]
 visible = false
@@ -333,7 +333,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.7, 0.45, 1)
 theme_override_font_sizes/font_size = 7
-text = "HOST IP: 127.0.0.1\nSPECIMENS: [ 1 / 8 ]\nSTATUS: AWAITING CONNECTION"
+text = "IP DEL HOST: 127.0.0.1\nJUGADORES EN SALA: [ 1 / 8 ]\nESTADO: ESPERANDO JUGADORES (MÍNIMO 2)"
 horizontal_alignment = 1
 
 [node name="BtnStart" type="Button" parent="CenterArea/MainFrame/Margin/VBox"]
@@ -346,7 +346,7 @@ theme_override_font_sizes/font_size = 10
 theme_override_styles/hover = SubResource("StyleBoxFlat_start_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_press")
 theme_override_styles/normal = SubResource("StyleBoxFlat_start_btn")
-text = "[ >>> COMMENCE HUNT <<< ]"
+text = "[ INICIAR PARTIDA ]"
 
 [node name="StatusLabel" type="Label" parent="."]
 layout_mode = 1
@@ -360,7 +360,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.65, 0.4, 0.2, 1)
 theme_override_font_sizes/font_size = 7
-text = "// READY // AWAITING COMMAND"
+text = "// LISTO // SELECCIONÁ UNA OPCIÓN"
 horizontal_alignment = 1
 
 [node name="BottomFooter" type="Label" parent="."]
@@ -377,7 +377,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(0.35, 0.32, 0.3, 1)
 theme_override_font_sizes/font_size = 6
-text = "[ ENET_LAYER // PORT: 7777 // SECURE PROTOCOL ]"
+text = "[ RED LOCAL // PUERTO: 7777 ]"
 
 [node name="PostFX" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_crt")

@@ -37,10 +37,10 @@ func _ready() -> void:
 	if not GameState.last_result.is_empty():
 		result_banner.visible = true
 		if GameState.last_result == "hiders":
-			result_label.text = ">>> PROTOCOL RESULT: HIDERS SURVIVED <<<"
+			result_label.text = ">>> LAS RATAS AGUANTARON Y SE LLEVARON EL POZO <<<"
 			result_label.modulate = Color(0.4, 0.9, 0.5)
 		else:
-			result_label.text = ">>> PROTOCOL RESULT: SEEKER PURGED ALL <<<"
+			result_label.text = ">>> EL COBRADOR LIQUIDÓ A TODAS LAS RATAS <<<"
 			result_label.modulate = Color(1.0, 0.25, 0.2)
 		GameState.last_result = ""
 	else:
@@ -67,15 +67,15 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_time_passed += delta
 	if int(_time_passed * 2.0) % 2 == 0:
-		header_signal.text = "[ * SIGNAL: ACTIVE ]"
+		header_signal.text = "[ * EN LÍNEA ]"
 		header_signal.modulate = Color(0.85, 0.45, 0.15)
 	else:
-		header_signal.text = "[ o SIGNAL: ACTIVE ]"
+		header_signal.text = "[ o EN LÍNEA ]"
 		header_signal.modulate = Color(0.5, 0.3, 0.15)
 
 
 func _show_only(panel: Control) -> void:
-	status_label.text = "// READY // AWAITING COMMAND"
+	status_label.text = "// LISTO // SELECCIONÁ UNA OPCIÓN"
 	for p in [panel_main, panel_play, panel_join]:
 		if p != null:
 			p.visible = (p == panel)
@@ -91,40 +91,40 @@ func _on_create_pressed() -> void:
 		lobby_box.visible = true
 		_update_lobby_ui()
 	else:
-		status_label.text = "[ ERROR // FAILED TO BIND PORT 7777 ]"
+		status_label.text = "[ ERROR: NO SE PUDO ABRIR EL PUERTO 7777 ]"
 
 
 func _on_connect_pressed() -> void:
 	var address := line_room_code.text.strip_edges()
 	if address.is_empty():
 		address = "127.0.0.1"
-	status_label.text = "[ TRANSMITTING UPLINK TO %s... ]" % address
+	status_label.text = "[ CONECTANDO A %s... ]" % address
 	NetworkManager.join_room(address)
 
 
 func _on_connection_failed() -> void:
-	status_label.text = "[ CONNECTION ABORTED // NO RESPONSE ]"
+	status_label.text = "[ ERROR: NO SE PUDO CONECTAR AL HOST ]"
 
 
 func _on_server_created() -> void:
-	status_label.text = "[ TERMINAL HOSTED // BROADCASTING ]"
+	status_label.text = "[ SALA CREADA // ESPERANDO JUGADORES ]"
 	_update_lobby_ui()
 
 
 func _on_player_connected(_id: int) -> void:
-	status_label.text = "[ NEW SPECIMEN DETECTED // NODE CONNECTED ]"
+	status_label.text = "[ NUEVO JUGADOR CONECTADO ]"
 	_play_sfx(440.0, 0.04, -22.0)
 	_update_lobby_ui()
 
 
 func _on_player_disconnected(_id: int) -> void:
-	status_label.text = "[ WARNING // SPECIMEN DISCONNECTED ]"
+	status_label.text = "[ JUGADOR DESCONECTADO ]"
 	_update_lobby_ui()
 
 
 func _on_start_pressed() -> void:
 	_play_sfx(120.0, 0.08, -18.0)
-	status_label.text = "[ COMMENCING HUNT... INITIALIZING CELLS ]"
+	status_label.text = "[ INICIANDO PARTIDA... ]"
 	NetworkManager.start_game()
 
 
@@ -134,13 +134,13 @@ func _update_lobby_ui() -> void:
 
 	var is_host := multiplayer.is_server()
 	var count := multiplayer.get_peers().size() + 1
-	var ip := NetworkManager.get_local_ip() if is_host else "CONNECTED"
+	var ip := NetworkManager.get_local_ip() if is_host else "CONECTADO"
 
-	lobby_label.text = "HOST IP: %s\nSPECIMENS: [ %d / %d ]\nSTATUS: %s" % [
+	lobby_label.text = "IP DEL HOST: %s\nJUGADORES EN SALA: [ %d / %d ]\nESTADO: %s" % [
 		ip,
 		count,
 		NetworkManager.MAX_PLAYERS,
-		"READY TO LAUNCH" if count >= 2 else "WAITING FOR PLAYERS (MIN 2)"
+		"SALA LISTA // LISTO PARA EMPEZAR" if count >= 2 else "ESPERANDO JUGADORES (MÍNIMO 2)"
 	]
 
 	btn_start.visible = is_host and (count >= 2)

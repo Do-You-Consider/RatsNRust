@@ -26,10 +26,10 @@ func _ready() -> void:
 	var my_id := multiplayer.get_unique_id()
 	var role := GameState.get_role(my_id)
 	if role == GameState.Role.SEEKER:
-		role_label.text = "[ PROTOCOL // SEEKER: HUNT ]"
+		role_label.text = "[ SOS EL COBRADOR // CAZÁ A LAS RATAS ]"
 		role_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.15))
 	else:
-		role_label.text = "[ OBJECTIVE // HIDER: SURVIVE ]"
+		role_label.text = "[ SOS UNA RATA // ESCONDETE Y ZAFÁ ]"
 		role_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.55))
 
 
@@ -71,7 +71,7 @@ func _process(delta: float) -> void:
 	var total_secs := int(ceil(GameState.round_time_left))
 	var mins := total_secs / 60
 	var secs := total_secs % 60
-	timer_label.text = "TIME: [ %02d:%02d ]" % [mins, secs]
+	timer_label.text = "POZO EN JUEGO: [ %02d:%02d ]" % [mins, secs]
 
 	var total_hiders := 0
 	var caught_count := 0
@@ -83,9 +83,9 @@ func _process(delta: float) -> void:
 				caught_count += 1
 	var active_hiders: int = maxi(0, total_hiders - caught_count)
 	if total_hiders > 0:
-		status_label.text = "SPECIMENS: [ %d / %d ACTIVE ]" % [active_hiders, total_hiders]
+		status_label.text = "RATAS EN JUEGO: [ %d / %d VIVAS ]" % [active_hiders, total_hiders]
 	else:
-		status_label.text = "SPECIMENS: [ SCANNING... ]"
+		status_label.text = "BUSCANDO RATAS EN EL GALPÓN..."
 
 
 ## Solo corre en el host: revisa distancia del Seeker a cada Hider vivo.
