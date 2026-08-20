@@ -101,6 +101,7 @@ func start_game() -> void:
 func _rpc_start_game(roles: Dictionary, map_seed: int) -> void:
 	GameState.reset()
 	GameState.player_roles = roles
+	GameState.init_rat_states()
 	GameState.map_seed = map_seed
 	GameState.round_time_left = GameState.round_duration
 	GameState.round_active = true

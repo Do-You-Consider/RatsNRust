@@ -1,2 +1,11 @@
-res://scripts/map/MapGenerator.gd
-res://scripts/_shots_map.gd
+res://scenes/player/Player.gd
+res://scenes/player/Player.tscn
+res://scripts/autoload/GameState.gd
+res://scripts/autoload/NetworkManager.gd
+res://scenes/game/Game.gd
+res://scripts/characters/CharacterAppearance.gd
+res://scripts/characters/CharacterRig.gd
+res://scripts/characters/RigAnimations.gd
+res://scripts/characters/RigBuilder.gd
+res://_visual.gd
+res://scripts/characters/CharacterProfiles.gd
