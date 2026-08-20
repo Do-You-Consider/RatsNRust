@@ -1,16 +1,20 @@
 extends Node3D
 class_name MapGenerator
 ## =============================================================================
-## COMPLEJO SUBTERRÁNEO CLANDESTINO (ESTILO BUCKSHOT ROULETTE) - GENERACIÓN DESDE CERO
+## WAREHOUSE CLANDESTINA / RAVE TECHNO (ESTILO BUCKSHOT ROULETTE) - GENERACIÓN DESDE CERO
 ## =============================================================================
-## Blueprint arquitectónico de 36m x 36m con 9 salas temáticas realistas e interconectadas:
+## Blueprint arquitectónico de una nave industrial real: 66m x 66m totales,
+## 7m de altura de techo, 9 zonas temáticas interconectadas:
 ##
-##   [ SEGURIDAD & ACCESO ] ─── [ ALMACÉN DE CARGA ] ─── [ TALLER DE REPARACIONES ]
+##   [ SEGURIDAD & CELDA  ] ─── [ ALMACÉN DE CARGA ] ─── [ TALLER DE REPARACIONES ]
 ##            │                            │                            │
-##   [ BAR & LOUNGE VIP ]   ─── [ SALÓN DE RULETA  ] ─── [ SALA DE CALDERAS     ]
+##   [ BAR & LOUNGE VIP ]   ─── [ PISTA DE BAILE + DJ ] ─── [ SALA DE CALDERAS     ]
 ##            │                            │                            │
 ##   [ SALA VIP DE PÓKER ]  ─── [ BAÑOS & TUBERÍAS ] ─── [ BÓVEDA & CAJA FUERTE  ]
 ##
+## La pista de baile central tiene una claraboya en el techo (panel emisivo +
+## focos hacia abajo simulando luz de ventanas de nave industrial) y una
+## cabina de DJ con reproducción de música propia (ver export "club_music").
 ## - Estructura física cerrada y sólida (sin huecos al vacío ni salidas falsas).
 ## - Suelo y techo monolíticos con acabados específicos por zona.
 ## - Mobiliario y props 3D detallados con colisiones reales (Mesa central, Barra,
@@ -18,8 +22,15 @@ class_name MapGenerator
 ## - Puntos de spawn estratégicos y distribuidos.
 ## =============================================================================
 
-@export var room_size: float = 12.0
-@export var wall_height: float = 3.6
+@export var room_size: float = 22.0 # antes 18.0 -- ancho real de nave industrial
+@export var wall_height: float = 7.0 # antes 4.8 -- altura real de warehouse (armadura metálica expuesta)
+
+## Arrastrá acá el .ogg/.mp3 que quieras que suene desde la cabina del DJ
+## (seleccioná el nodo MapGenerator en Game.tscn y usá este campo en el
+## Inspector). Es audio 3D posicional -- se escucha más fuerte cerca de la
+## pista y se va apagando en las salas vecinas. Si se deja vacío, no suena
+## nada (sin fallback artificial).
+@export var club_music: AudioStream
 
 var rng := RandomNumberGenerator.new()
 
@@ -102,11 +113,14 @@ func _init_palette() -> void:
 	mat_hazard_mark.metallic = 0.4
 	mat_hazard_mark.roughness = 0.65
 
+	# Vidrio del portalámparas: neutro/pálido a propósito -- el color real de
+	# la vibe (magenta, cian, violeta) lo pone la luz OmniLight de cada sala,
+	# no la carcasa, así no hay choque entre el vidrio y el tinte de neón.
 	mat_bulb_amber = StandardMaterial3D.new()
-	mat_bulb_amber.albedo_color = Color(1.0, 0.75, 0.4)
+	mat_bulb_amber.albedo_color = Color(0.9, 0.88, 0.92)
 	mat_bulb_amber.emission_enabled = true
-	mat_bulb_amber.emission = Color(1.0, 0.68, 0.28)
-	mat_bulb_amber.emission_energy_multiplier = 3.0
+	mat_bulb_amber.emission = Color(0.92, 0.9, 0.95)
+	mat_bulb_amber.emission_energy_multiplier = 2.2
 
 	mat_tube_cyan = StandardMaterial3D.new()
 	mat_tube_cyan.albedo_color = Color(0.7, 0.95, 0.9)
@@ -135,7 +149,7 @@ var _door_open: Dictionary = {}
 
 const GRID_POSITIONS_COUNT := 3 # grid de 3x3 salas
 const ROOM_HIDE_OFFSETS := {
-	"gambling": Vector3(3.6, 0.8, 3.6),
+	"gambling": Vector3(-3.1, 0.8, -6.4), # detrás de la torre de parlantes de la cabina DJ
 	"bar": Vector3(3.2, 0.8, 3.2),
 	"boiler": Vector3(3.2, 0.8, 3.2),
 	"cargo": Vector3(0.0, 0.8, 0.0),
@@ -190,8 +204,46 @@ func _build_monolithic_facility() -> void:
 	#    layout distinto en cada partida)
 	_place_rooms()
 
-	# 6. CONFIGURAR PUNTOS DE SPAWN ESTRATÉGICOS (según dónde cayó cada sala)
+	# 6. CLARABOYA: luz de "ventanas de techo" cayendo sobre la pista de baile
+	_build_skylight()
+
+	# 7. CONFIGURAR PUNTOS DE SPAWN ESTRATÉGICOS (según dónde cayó cada sala)
 	_setup_tactical_spawns()
+
+
+## Panel emisivo embebido en el techo, directo arriba de la sala que quedó
+## asignada como pista de baile, + un par de focos apuntando hacia abajo
+## simulando luz colándose por las ventanas del techo de la warehouse
+## (se nota especialmente por la niebla del ambiente).
+func _build_skylight() -> void:
+	var dance_pos: Vector3 = _room_positions.get("gambling", Vector3.ZERO)
+	var panel_size := room_size * 0.55
+
+	var skylight_mat := StandardMaterial3D.new()
+	skylight_mat.albedo_color = Color(0.75, 0.82, 0.95)
+	skylight_mat.emission_enabled = true
+	skylight_mat.emission = Color(0.7, 0.8, 1.0)
+	skylight_mat.emission_energy_multiplier = 3.0
+	_create_box(dance_pos + Vector3(0, wall_height + 0.05, 0), Vector3(panel_size, 0.15, panel_size), skylight_mat, false)
+
+	# Marco de vigas cruzadas (look de armadura industrial)
+	for offset in [-panel_size * 0.25, panel_size * 0.25]:
+		_create_box(dance_pos + Vector3(offset, wall_height + 0.02, 0), Vector3(0.2, 0.2, panel_size), mat_dark_steel, false)
+		_create_box(dance_pos + Vector3(0, wall_height + 0.02, offset), Vector3(panel_size, 0.2, 0.2), mat_dark_steel, false)
+
+	# Focos simulando la luz que se cuela por las ventanas del techo
+	var beam_offsets := [Vector3(-2.5, 0, -2.5), Vector3(2.5, 0, 2.5), Vector3(-2.5, 0, 2.5), Vector3(2.5, 0, -2.5)]
+	for offset in beam_offsets:
+		var beam := SpotLight3D.new()
+		beam.light_color = Color(0.75, 0.85, 1.0)
+		beam.light_energy = 1.4
+		beam.spot_range = wall_height + 1.0
+		beam.spot_angle = 18.0
+		add_child(beam)
+		beam.position = dance_pos + offset + Vector3(0, wall_height - 0.2, 0)
+		# Apunta derecho hacia abajo. Vector3.UP como "up" sería degenerado acá
+		# (paralelo a la dirección), por eso usamos un vector perpendicular.
+		beam.look_at(beam.position + Vector3(0, -1, 0), Vector3(0, 0, -1))
 
 
 ## Determinista con la seed: recorre el grid de 3x3 salas con backtracking
@@ -295,6 +347,87 @@ func _place_rooms() -> void:
 			"vault":
 				_build_reinforced_vault(pos)
 
+		# Vestimenta extra de club/warehouse en cada sala: al agrandar el
+		# tamaño de sala (room_size), el mobiliario original -pensado para
+		# salas más chicas- quedó disperso y se sentía vacío. Esto suma
+		# densidad visual pareja en las 9 salas sin tocar el contenido
+		# temático original de cada builder.
+		_add_club_dressing(pos)
+
+
+## Vestimenta genérica de club/warehouse para cualquier sala: parlantes PA,
+## pallets apilados, un par de barriles sueltos y una tira de luces LED en
+## el techo. Se ubica en las esquinas para no chocar con el mobiliario
+## específico de cada sala (que suele estar más cerca del centro). Esto es
+## lo que compensa la densidad de props que se diluyó al agrandar room_size.
+func _add_club_dressing(pos: Vector3) -> void:
+	var half := room_size * 0.5
+	var inset := half - 1.6
+
+	# Parlantes PA apilados en una esquina, con rejilla cian que brilla
+	var speaker_corner := pos + Vector3(inset, 0, inset)
+	_create_box(speaker_corner + Vector3(0, 0.9, 0), Vector3(1.1, 1.8, 1.0), mat_dark_steel)
+	_create_box(speaker_corner + Vector3(0, 2.05, 0), Vector3(0.85, 0.5, 0.8), mat_dark_steel)
+
+	var speaker_mat := StandardMaterial3D.new()
+	speaker_mat.albedo_color = Color(0.15, 0.85, 0.95)
+	speaker_mat.emission_enabled = true
+	speaker_mat.emission = Color(0.1, 0.8, 0.95)
+	speaker_mat.emission_energy_multiplier = 2.0
+	_create_box(speaker_corner + Vector3(0, 0.9, 0.51), Vector3(0.7, 1.2, 0.04), speaker_mat, false)
+
+	var speaker_light := OmniLight3D.new()
+	speaker_light.position = speaker_corner + Vector3(0, 2.1, 0.5)
+	speaker_light.light_color = Color(0.2, 0.85, 0.95)
+	speaker_light.light_energy = 0.55
+	speaker_light.omni_range = 3.2
+	add_child(speaker_light)
+
+	# Pallets de cajas apiladas en la esquina opuesta
+	var stack_corner := pos + Vector3(-inset, 0, -inset)
+	for i in 3:
+		var box_size := Vector3(1.15, 0.5, 1.15)
+		var stack_pos := stack_corner + Vector3(0, 0.28 + i * 0.52, 0)
+		var mat := mat_aged_wood if i % 2 == 0 else mat_dark_steel
+		_create_box(stack_pos, box_size, mat)
+
+	# Barriles sueltos -- posición semi-random pero determinista con la seed
+	for i in 2:
+		var offset := Vector3(
+			rng.randf_range(-room_size * 0.28, room_size * 0.28),
+			0.0,
+			rng.randf_range(-room_size * 0.28, room_size * 0.28)
+		)
+		_create_cylinder(pos + offset + Vector3(0, 0.45, 0), 0.34, 0.9, mat_rust_metal)
+
+	# Tira de luces LED montada CONTRA la pared cerca del techo (antes quedaba
+	# flotando en el medio del aire sin ningún soporte -- ahora queda pegada
+	# a la pared, como una instalación real)
+	var strip_mat := StandardMaterial3D.new()
+	strip_mat.albedo_color = Color(1.0, 0.15, 0.55)
+	strip_mat.emission_enabled = true
+	strip_mat.emission = Color(1.0, 0.1, 0.55)
+	strip_mat.emission_energy_multiplier = 2.5
+
+	var strip_y := wall_height - 0.35
+	var steps := 5
+	for i in steps:
+		var t := float(i) / float(steps - 1)
+		var lx: float = lerpf(-half + 1.0, half - 1.0, t)
+		# Riel metálico de montaje (da la sensación de estar atornillado)
+		_create_box(pos + Vector3(lx, strip_y, -half + 0.08), Vector3(0.55, 0.1, 0.05), mat_dark_steel, false)
+		_create_box(pos + Vector3(lx, strip_y, half - 0.08), Vector3(0.55, 0.1, 0.05), mat_dark_steel, false)
+		# Tira LED propiamente dicha, pegada al riel
+		_create_box(pos + Vector3(lx, strip_y, -half + 0.14), Vector3(0.5, 0.05, 0.05), strip_mat, false)
+		_create_box(pos + Vector3(lx, strip_y, half - 0.14), Vector3(0.5, 0.05, 0.05), strip_mat, false)
+
+	var strip_light := OmniLight3D.new()
+	strip_light.position = pos + Vector3(0, strip_y - 0.3, 0)
+	strip_light.light_color = Color(1.0, 0.2, 0.6)
+	strip_light.light_energy = 0.4
+	strip_light.omni_range = room_size * 0.6
+	add_child(strip_light)
+
 
 ## Tabiques interiores entre las 9 salas: puerta con marco si la conectividad
 ## random dice que ese paso está abierto, o muro sólido si está cerrado.
@@ -390,35 +523,97 @@ func _build_infrastructure() -> void:
 # SALAS TEMÁTICAS DETALLADAS (BUCKSHOT ROULETTE AESTHETIC)
 # ==============================================================================
 
-## 1. SALÓN DE RULETA / GAMBLING ARENA (Centro)
+## 1. PISTA DE BAILE PRINCIPAL + DJ SET (Centro) -- el corazón del club
 func _build_gambling_arena(pos: Vector3) -> void:
-	# Suelo de madera desgastada
-	_create_box(pos + Vector3(0, 0.02, 0), Vector3(room_size - 0.4, 0.04, room_size - 0.4), mat_wood_floor)
+	# Piso de pista con panels de colores alternados (estilo disco clásico)
+	var tile_size := 1.5
+	var tiles_per_side := 6
+	var floor_span := tile_size * tiles_per_side
+	var start := -floor_span * 0.5 + tile_size * 0.5
+	var tile_colors := [
+		Color(0.9, 0.1, 0.5), Color(0.15, 0.85, 0.95),
+		Color(0.6, 0.15, 1.0), Color(1.0, 0.5, 0.05),
+	]
+	_create_box(pos + Vector3(0, -0.05, 0), Vector3(room_size - 0.4, 0.1, room_size - 0.4), mat_concrete_floor)
+	for ix in tiles_per_side:
+		for iz in tiles_per_side:
+			var tx: float = start + ix * tile_size
+			var tz: float = start + iz * tile_size
+			var tile_mat := StandardMaterial3D.new()
+			var c: Color = tile_colors[(ix + iz) % tile_colors.size()]
+			tile_mat.albedo_color = c
+			tile_mat.emission_enabled = true
+			tile_mat.emission = c
+			tile_mat.emission_energy_multiplier = 1.4
+			_create_box(pos + Vector3(tx, 0.03, tz), Vector3(tile_size - 0.06, 0.06, tile_size - 0.06), tile_mat, false)
 
-	# 4 Columnas de hormigón con refuerzo metálico
-	var col_dist := 3.6
-	for dx in [-1, 1]:
-		for dz in [-1, 1]:
-			_create_box(pos + Vector3(dx * col_dist, wall_height * 0.5, dz * col_dist), Vector3(0.8, wall_height, 0.8), mat_concrete_wall)
-			_create_box(pos + Vector3(dx * col_dist, 0.2, dz * col_dist), Vector3(0.95, 0.4, 0.95), mat_rust_metal)
+	# DJ BOOTH elevado contra la pared norte
+	var booth_z: float = -room_size * 0.5 + 1.6
+	_create_box(pos + Vector3(0, 0.5, booth_z), Vector3(4.2, 1.0, 1.6), mat_dark_steel)
+	_create_box(pos + Vector3(0, 1.05, booth_z), Vector3(3.8, 0.1, 1.3), mat_rust_metal)
+	_create_box(pos + Vector3(0, 1.15, booth_z - 0.3), Vector3(1.6, 0.12, 0.5), mat_dark_steel)
 
-	# LA MESA DEL DEALER (Mesa central de apuestas icónica)
-	_create_box(pos + Vector3(0, 0.4, 0), Vector3(3.2, 0.8, 1.8), mat_aged_wood)
-	_create_box(pos + Vector3(0, 0.82, 0), Vector3(2.8, 0.05, 1.4), mat_table_felt)
+	# Música del DJ (opcional, tu propio .ogg/.mp3 desde el Inspector).
+	# Audio 3D posicional -- se re-loopea sola sin importar la configuración
+	# de import del archivo.
+	if club_music != null:
+		var music_player := AudioStreamPlayer3D.new()
+		music_player.stream = club_music
+		music_player.unit_size = 22.0
+		music_player.max_db = 3.0
+		add_child(music_player)
+		music_player.position = pos + Vector3(0, 1.4, booth_z)
+		music_player.play()
+		music_player.finished.connect(func(): music_player.play())
 
-	# Cenicero y botellas sobre la mesa
-	_create_cylinder(pos + Vector3(0.8, 0.86, 0.3), 0.08, 0.04, mat_rust_metal)
-	_create_cylinder(pos + Vector3(0.9, 0.95, -0.3), 0.04, 0.22, mat_rust_metal)
+	# Torres de parlantes flanqueando la cabina (una de las dos es el escondite)
+	for side in [-1, 1]:
+		var speaker_x: float = side * 3.1
+		_create_box(pos + Vector3(speaker_x, 1.1, booth_z), Vector3(1.1, 2.2, 1.0), mat_dark_steel)
+		_create_box(pos + Vector3(speaker_x, 1.1, booth_z + 0.51), Vector3(0.9, 1.8, 0.05), mat_dark_steel)
 
-	# 2 Sillas pesadas enfrentadas (Dealer vs Jugador)
-	_create_chair(pos + Vector3(0, 0, 1.3), 0.0)
-	_create_chair(pos + Vector3(0, 0, -1.3), PI)
+		var glow_mat := StandardMaterial3D.new()
+		var glow_c: Color = Color(0.15, 0.85, 0.95) if side < 0 else Color(0.9, 0.1, 0.5)
+		glow_mat.albedo_color = glow_c
+		glow_mat.emission_enabled = true
+		glow_mat.emission = glow_c
+		glow_mat.emission_energy_multiplier = 2.0
+		_create_box(pos + Vector3(speaker_x, 1.9, booth_z + 0.53), Vector3(0.7, 0.35, 0.03), glow_mat, false)
 
-	# Lámpara cónica colgante baja directamente sobre la mesa (Sombras duras y luz cálida)
-	_create_hanging_lamp(pos + Vector3(0, wall_height, 0), 1.8, Color(1.0, 0.65, 0.25), 1.8, 8.0)
+	# Baranda separando la cabina de la pista
+	_create_box(pos + Vector3(0, 0.5, booth_z + 1.0), Vector3(4.6, 0.06, 0.06), mat_dark_steel, false)
+	for bx in [-2.2, -1.1, 0.0, 1.1, 2.2]:
+		_create_box(pos + Vector3(bx, 0.25, booth_z + 1.0), Vector3(0.05, 0.5, 0.05), mat_dark_steel)
 
-	# Máquina de cigarrillos oxidada contra la pared
-	_create_box(pos + Vector3(4.8, 1.1, -2.5), Vector3(0.8, 2.2, 1.2), mat_rust_metal)
+	# "Bola de espejos" simplificada colgando del centro
+	_create_cylinder(pos + Vector3(0, wall_height - 0.4, 0), 0.02, 1.2, mat_dark_steel, false)
+	var mirror_mat := StandardMaterial3D.new()
+	mirror_mat.albedo_color = Color(0.85, 0.85, 0.9)
+	mirror_mat.metallic = 1.0
+	mirror_mat.roughness = 0.05
+	_create_cylinder(pos + Vector3(0, wall_height - 1.0, 0), 0.55, 0.55, mirror_mat, false)
+
+	# 4 focos de "show" apuntando al centro desde las esquinas
+	var show_colors := [Color(1.0, 0.15, 0.55), Color(0.15, 0.85, 0.95), Color(0.6, 0.15, 1.0), Color(1.0, 0.5, 0.05)]
+	var corner_dirs := [Vector3(1, 0, 1), Vector3(-1, 0, 1), Vector3(1, 0, -1), Vector3(-1, 0, -1)]
+	for i in 4:
+		var corner_pos: Vector3 = pos + corner_dirs[i] * (room_size * 0.4) + Vector3(0, wall_height - 0.3, 0)
+		var spot := SpotLight3D.new()
+		spot.light_color = show_colors[i]
+		spot.light_energy = 2.0
+		spot.spot_range = room_size * 0.7
+		spot.spot_angle = 28.0
+		add_child(spot)
+		spot.global_position = corner_pos
+		spot.look_at(pos + Vector3(0, 0.5, 0), Vector3.UP)
+
+	# Luz de relleno general de pista
+	var floor_light := OmniLight3D.new()
+	floor_light.position = pos + Vector3(0, wall_height - 1.5, 0)
+	floor_light.light_color = Color(0.8, 0.3, 0.9)
+	floor_light.light_energy = 0.6
+	floor_light.omni_range = room_size * 0.7
+	add_child(floor_light)
 
 
 ## 2. EL BAR & VIP LOUNGE (Oeste)
@@ -444,8 +639,8 @@ func _build_grimy_bar(pos: Vector3) -> void:
 	_create_box(pos + Vector3(2.2, 0.25, 2.2), Vector3(1.2, 0.5, 0.8), mat_aged_wood)
 
 	# Iluminación de bar tenue
-	_create_hanging_lamp(pos + Vector3(-1.5, wall_height, -2.2), 1.4, Color(1.0, 0.5, 0.15), 1.2, 6.5)
-	_create_hanging_lamp(pos + Vector3(2.5, wall_height, 2.5), 1.4, Color(0.9, 0.3, 0.1), 1.0, 5.5)
+	_create_hanging_lamp(pos + Vector3(-1.5, wall_height, -2.2), 3.6, Color(0.2, 0.85, 0.95), 1.3, 7.0)
+	_create_hanging_lamp(pos + Vector3(2.5, wall_height, 2.5), 3.6, Color(0.9, 0.1, 0.5), 1.1, 6.0)
 
 
 ## 3. SALA DE CALDERAS & GENERADOR (Este)
@@ -489,7 +684,7 @@ func _build_cargo_storage(pos: Vector3) -> void:
 	_create_box(pos + Vector3(3.8, 0.5, -3.8), Vector3(1.2, 1.0, 1.2), mat_aged_wood)
 
 	# Iluminación de depósito
-	_create_hanging_lamp(pos + Vector3(0, wall_height, 0), 1.0, Color(0.95, 0.75, 0.4), 1.2, 7.5)
+	_create_hanging_lamp(pos + Vector3(0, wall_height, 0), 3.2, Color(0.55, 0.25, 1.0), 1.3, 8.0)
 
 
 ## 5. BAÑOS & TUBERÍAS DE DRENAJE (Sur)
@@ -515,10 +710,10 @@ func _build_restrooms_complex(pos: Vector3) -> void:
 	_create_box(pos + Vector3(4.1, 1.5, 0), Vector3(0.05, 0.9, 3.2), mat_dark_steel)
 
 	# Tubo fluorescente parpadeante frío
-	_create_fluorescent_fixture(pos + Vector3(0, wall_height - 0.05, 0), Color(0.6, 0.95, 0.85), 1.5, 8.5)
+	_create_fluorescent_fixture(pos + Vector3(0, wall_height - 0.05, 0), Color(0.3, 0.9, 0.95), 1.6, 9.0)
 
 
-## 6. OFICINA DE SEGURIDAD & ENTRADA (Noroeste - Spawn Seeker)
+## 6. OFICINA DE SEGURIDAD & CELDA DE CONTENCIÓN (Noroeste - Spawn Atrapador)
 func _build_security_airlock(pos: Vector3) -> void:
 	# Puesto de control / Escritorio con monitores CRT de fósforo verde
 	_create_box(pos + Vector3(0, 0.4, -2.4), Vector3(3.2, 0.8, 1.2), mat_dark_steel)
@@ -539,7 +734,58 @@ func _build_security_airlock(pos: Vector3) -> void:
 	crt_light.omni_range = 4.5
 	add_child(crt_light)
 
-	_create_hanging_lamp(pos + Vector3(0, wall_height, 1.0), 1.2, Color(0.9, 0.7, 0.4), 0.9, 6.0)
+	_create_hanging_lamp(pos + Vector3(0, wall_height, 1.0), 3.4, Color(1.0, 0.2, 0.6), 1.0, 6.5)
+
+	_build_holding_cell(pos + Vector3(3.6, 0, 1.2))
+
+
+## Celda de contención de donde escapó el Atrapador: rejas en 3 lados, una
+## abertura al frente (la puerta forzada), catre volcado y cadena colgando.
+## Luz roja de alarma en vez del resto de la paleta neón de la sala, para
+## que se lea claramente distinta -- es la escena del "quiebre".
+func _build_holding_cell(cell_center: Vector3) -> void:
+	var cell_w := 2.6
+	var cell_d := 2.6
+	var bar_h := 2.2
+	var bar_spacing := 0.32
+
+	# Reja trasera (cerrada)
+	var back_bars := int(cell_w / bar_spacing)
+	for i in back_bars:
+		var bx: float = -cell_w * 0.5 + i * bar_spacing
+		_create_box(cell_center + Vector3(bx, bar_h * 0.5, -cell_d * 0.5), Vector3(0.05, bar_h, 0.05), mat_rust_metal)
+
+	# Reja lateral (cerrada)
+	var side_bars := int(cell_d / bar_spacing)
+	for i in side_bars:
+		var bz: float = -cell_d * 0.5 + i * bar_spacing
+		_create_box(cell_center + Vector3(-cell_w * 0.5, bar_h * 0.5, bz), Vector3(0.05, bar_h, 0.05), mat_rust_metal)
+
+	# Reja frontal ROTA -- hueco de la puerta forzada, por acá se escapó
+	var front_bars := int(cell_w / bar_spacing)
+	for i in front_bars:
+		var bx: float = -cell_w * 0.5 + i * bar_spacing
+		if absf(bx) < cell_w * 0.28:
+			continue
+		_create_box(cell_center + Vector3(bx, bar_h * 0.5, cell_d * 0.5), Vector3(0.05, bar_h, 0.05), mat_rust_metal)
+
+	# Marco superior/lateral
+	_create_box(cell_center + Vector3(0, bar_h, -cell_d * 0.5), Vector3(cell_w, 0.08, 0.08), mat_dark_steel)
+	_create_box(cell_center + Vector3(-cell_w * 0.5, bar_h, 0), Vector3(0.08, 0.08, cell_d), mat_dark_steel)
+
+	# Catre metálico volcado + colchón fino
+	_create_box(cell_center + Vector3(0.2, 0.32, -0.6), Vector3(1.7, 0.12, 0.75), mat_dark_steel)
+	_create_box(cell_center + Vector3(0.2, 0.4, -0.6), Vector3(1.6, 0.1, 0.7), mat_leather_brown)
+
+	# Cadena colgando de la reja rota
+	_create_cylinder(cell_center + Vector3(cell_w * 0.28, bar_h * 0.6, cell_d * 0.5), 0.02, bar_h * 0.5, mat_dark_steel)
+
+	var cell_light := OmniLight3D.new()
+	cell_light.position = cell_center + Vector3(0, bar_h + 0.3, 0)
+	cell_light.light_color = Color(0.95, 0.15, 0.15)
+	cell_light.light_energy = 0.7
+	cell_light.omni_range = 4.0
+	add_child(cell_light)
 
 
 ## 7. TALLER DE REPARACIONES (Noreste)
@@ -554,7 +800,7 @@ func _build_maintenance_workshop(pos: Vector3) -> void:
 	# Carro de herramientas rodante
 	_create_box(pos + Vector3(1.5, 0.45, 2.2), Vector3(0.8, 0.9, 1.1), mat_rust_metal)
 
-	_create_fluorescent_fixture(pos + Vector3(0, wall_height - 0.05, 0), Color(0.95, 0.85, 0.65), 1.2, 7.5)
+	_create_fluorescent_fixture(pos + Vector3(0, wall_height - 0.05, 0), Color(0.4, 0.95, 0.9), 1.3, 8.0)
 
 
 ## 8. SALA PRIVADA DE PÓKER VIP (Suroeste)
@@ -571,7 +817,7 @@ func _build_vip_poker_lounge(pos: Vector3) -> void:
 		var offset := Vector3(cos(a) * 1.8, 0, sin(a) * 1.8)
 		_create_box(pos + offset + Vector3(0, 0.45, 0), Vector3(0.9, 0.9, 0.9), mat_leather_brown)
 
-	_create_hanging_lamp(pos + Vector3(0, wall_height, 0), 1.6, Color(1.0, 0.5, 0.15), 1.5, 6.5)
+	_create_hanging_lamp(pos + Vector3(0, wall_height, 0), 3.8, Color(0.7, 0.15, 1.0), 1.6, 7.0)
 
 
 ## 9. BÓVEDA & CAJA FUERTE (Sureste)
@@ -588,7 +834,7 @@ func _build_reinforced_vault(pos: Vector3) -> void:
 	_create_box(pos + Vector3(2.0, 0.8, 2.0), Vector3(0.8, 0.4, 0.8), mat_dark_steel)
 	_create_box(pos + Vector3(2.8, 0.25, 1.6), Vector3(0.6, 0.5, 0.8), mat_aged_wood)
 
-	_create_hanging_lamp(pos + Vector3(0, wall_height, 0), 1.2, Color(0.95, 0.4, 0.15), 1.1, 6.0)
+	_create_hanging_lamp(pos + Vector3(0, wall_height, 0), 3.4, Color(1.0, 0.1, 0.35), 1.2, 6.5)
 
 
 # ==============================================================================

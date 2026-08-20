@@ -32,7 +32,6 @@ var _original_btn_texts: Dictionary = {}
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_setup_button_effects()
-	_show_only(panel_main)
 
 	if not GameState.last_result.is_empty():
 		result_banner.visible = true
@@ -40,11 +39,21 @@ func _ready() -> void:
 			result_label.text = "[ LAS RATAS HAN SOBREVIVIDO ]"
 			result_label.modulate = Color(0.4, 0.9, 0.55)
 		else:
-			result_label.text = "[ EL COBRADOR HA LIQUIDADO A TODOS ]"
+			result_label.text = "[ EL ATRAPADOR HA LIQUIDADO A TODOS ]"
 			result_label.modulate = Color(1.0, 0.3, 0.25)
 		GameState.last_result = ""
 	else:
 		result_banner.visible = false
+
+	# Si venimos de una ronda que acaba de terminar, la conexión con los
+	# demás jugadores sigue viva (nunca se cortó) -- hay que mostrar la sala
+	# de espera, no el menú principal, o el host terminaría intentando abrir
+	# un servidor nuevo estando ya conectado a uno.
+	if multiplayer.multiplayer_peer != null:
+		_show_only(panel_lobby)
+		_update_lobby_ui()
+	else:
+		_show_only(panel_main)
 
 	btn_play.pressed.connect(func(): _show_only(panel_play))
 	btn_quit.pressed.connect(func(): get_tree().quit())
@@ -107,7 +116,6 @@ func _on_connected_to_server() -> void:
 	_show_only(panel_lobby)
 	_update_lobby_ui()
 	status_label.text = "[ CONECTADO A LA SALA // ESPERANDO AL HOST ]"
-	_play_sfx(380.0, 0.04, -20.0)
 
 
 func _on_connection_failed() -> void:
@@ -133,7 +141,6 @@ func _on_leave_lobby_pressed() -> void:
 
 func _on_player_connected(_id: int) -> void:
 	status_label.text = "[ JUGADOR EN SALA ]"
-	_play_sfx(380.0, 0.04, -20.0)
 	_update_lobby_ui()
 
 
@@ -147,7 +154,6 @@ func _on_lobby_synced(_count: int, _host_ip: String) -> void:
 
 
 func _on_start_pressed() -> void:
-	_play_sfx(110.0, 0.1, -16.0)
 	status_label.text = "[ INICIANDO PARTIDA... ]"
 	NetworkManager.start_game()
 
@@ -184,14 +190,9 @@ func _setup_button_effects() -> void:
 		_original_btn_texts[btn] = btn.text
 		btn.mouse_entered.connect(_on_btn_mouse_entered.bind(btn))
 		btn.mouse_exited.connect(_on_btn_mouse_exited.bind(btn))
-		btn.pressed.connect(_on_btn_pressed.bind(btn))
-
-
-var _last_sfx_time: float = 0.0
 
 
 func _on_btn_mouse_entered(btn: Button) -> void:
-	_play_sfx(280.0, 0.025, -24.0)
 	var orig: String = _original_btn_texts.get(btn, btn.text)
 	btn.text = "> %s <" % orig
 
@@ -199,49 +200,3 @@ func _on_btn_mouse_entered(btn: Button) -> void:
 func _on_btn_mouse_exited(btn: Button) -> void:
 	var orig: String = _original_btn_texts.get(btn, btn.text)
 	btn.text = orig
-
-
-func _on_btn_pressed(_btn: Button) -> void:
-	_play_sfx(130.0, 0.05, -18.0)
-
-
-## Generador de click mecánico analógico (16-bit PCM)
-func _play_sfx(freq: float, duration: float, volume_db_gain: float = -22.0) -> void:
-	var now := Time.get_ticks_msec() / 1000.0
-	if now - _last_sfx_time < 0.04:
-		return
-	_last_sfx_time = now
-
-	var sample_rate := 22050
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-
-	var phase := 0.0
-	var phase_step := (freq * TAU) / float(sample_rate)
-
-	for i in num_samples:
-		var t: float = float(i) / float(num_samples)
-		var attack: float = minf(1.0, float(i) / 10.0)
-		var decay: float = pow(1.0 - t, 5.0)
-		var noise_component: float = (randf() - 0.5) * 0.15 * decay
-		var sample: float = (sin(phase) * 0.35 + noise_component) * attack * decay
-		var int16_val: int = int(clampf(sample, -1.0, 1.0) * 32767.0)
-
-		var idx: int = i * 2
-		data[idx] = int16_val & 0xFF
-		data[idx + 1] = (int16_val >> 8) & 0xFF
-		phase += phase_step
-
-	var wav := AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_16_BITS
-	wav.mix_rate = sample_rate
-	wav.stereo = false
-	wav.data = data
-
-	var player := AudioStreamPlayer.new()
-	player.stream = wav
-	player.volume_db = volume_db_gain
-	player.autoplay = true
-	player.finished.connect(player.queue_free)
-	add_child(player)

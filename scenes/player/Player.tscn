@@ -1,10 +1,20 @@
-[gd_scene load_steps=6 format=3 uid="uid://player0001"]
+[gd_scene format=3 uid="uid://player0001"]
 
-[ext_resource type="Script" path="res://scenes/player/Player.gd" id="1_player"]
+[ext_resource type="Script" uid="uid://fmlv2ygexkdy" path="res://scenes/player/Player.gd" id="1_player"]
+[ext_resource type="AudioStream" uid="uid://8hkmhfeebfex" path="res://scenes/footsteps1.ogg" id="2_524rm"]
+[ext_resource type="AudioStream" uid="uid://jjkixa8i7ymb" path="res://heartbeat.ogg" id="4_c3xxp"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.35
 height = 1.7
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
+radius = 0.3
+height = 1.2
+
+[sub_resource type="SphereMesh" id="SphereMesh_1"]
+radius = 0.2
+height = 0.4
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1"]
 properties/0/path = NodePath(".:position")
@@ -16,51 +26,49 @@ properties/1/replication_mode = 1
 properties/2/path = NodePath("Head:rotation:x")
 properties/2/spawn = true
 properties/2/replication_mode = 1
+properties/3/path = NodePath(".:velocity")
+properties/3/spawn = true
+properties/3/replication_mode = 1
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
-radius = 0.3
-height = 1.2
-
-[sub_resource type="SphereMesh" id="SphereMesh_1"]
-radius = 0.2
-height = 0.4
-
-[node name="Player" type="CharacterBody3D"]
+[node name="Player" type="CharacterBody3D" unique_id=421324511]
 script = ExtResource("1_player")
+footstep_sounds = Array[AudioStream]([ExtResource("2_524rm")])
+heartbeat_sound = ExtResource("4_c3xxp")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1106960074]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
 shape = SubResource("CapsuleShape3D_1")
 
-[node name="Body" type="Node3D" parent="."]
+[node name="Body" type="Node3D" parent="." unique_id=1892759971]
 
-[node name="Torso" type="MeshInstance3D" parent="Body"]
+[node name="Torso" type="MeshInstance3D" parent="Body" unique_id=674081895]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
 mesh = SubResource("CapsuleMesh_1")
 
-[node name="HeadMesh" type="MeshInstance3D" parent="Body"]
+[node name="HeadMesh" type="MeshInstance3D" parent="Body" unique_id=1517941793]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
 mesh = SubResource("SphereMesh_1")
 
-[node name="Head" type="Node3D" parent="."]
+[node name="Head" type="Node3D" parent="." unique_id=202176837]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, 0)
 
-[node name="Camera3D" type="Camera3D" parent="Head"]
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=2073952680]
 fov = 78.0
 
-[node name="Flashlight" type="SpotLight3D" parent="Head/Camera3D"]
+[node name="Flashlight" type="SpotLight3D" parent="Head/Camera3D" unique_id=1047300064]
 visible = false
 light_color = Color(1, 0.98, 0.92, 1)
 light_energy = 4.0
 light_indirect_energy = 0.5
 spot_range = 14.0
-spot_angle = 32.0
 spot_attenuation = 1.2
-shadow_enabled = false
+spot_angle = 32.0
 
-[node name="FootstepPlayer" type="AudioStreamPlayer3D" parent="."]
+[node name="FootstepPlayer" type="AudioStreamPlayer3D" parent="." unique_id=647489005]
 unit_size = 8.0
 max_db = -4.0
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+[node name="HeartbeatPlayer" type="AudioStreamPlayer" parent="." unique_id=1047495354]
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=192388847]
 replication_config = SubResource("SceneReplicationConfig_1")
