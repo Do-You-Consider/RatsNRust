@@ -10,3 +10,6 @@ res://scripts/characters/RigBuilder.gd
 res://_visual.gd
 res://scripts/characters/CharacterProfiles.gd
 res://scenes/menu/MainMenu.gd
+res://scripts/build/BuildKit.gd
+res://scripts/map/MapGenerator.gd
+res://scripts/menu/MenuSets.gd
