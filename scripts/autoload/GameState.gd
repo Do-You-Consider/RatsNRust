@@ -14,6 +14,15 @@ const RAT_MAX_HP := 2
 ## id de jugador (multiplayer unique id) -> Role
 var player_roles: Dictionary = {}
 
+## id de jugador -> Dictionary de CharacterAppearance (ya resuelta para el rol
+## que le tocó). La manda el host junto con los roles: la apariencia la eligió
+## cada jugador en su menú, así que el resto de los peers no tiene forma de
+## conocerla si no viaja explícitamente.
+var player_appearances: Dictionary = {}
+
+## id de jugador -> nombre mostrado. Solo presentación (HUD, resultados).
+var player_names: Dictionary = {}
+
 ## id de rata -> golpes restantes (int) y estado (RatState). Los escribe el
 ## servidor y los replica Game.gd vía RPC a TODOS los peers -- ojo con esto:
 ## el sistema viejo de atrape guardaba el estado solo en el host, así que el
@@ -46,6 +55,8 @@ var crawl_speed: float = 1.2
 
 func reset() -> void:
 	player_roles.clear()
+	player_appearances.clear()
+	player_names.clear()
 	rat_hp.clear()
 	rat_state.clear()
 	round_time_left = round_duration
@@ -72,6 +83,20 @@ func assign_seeker(id: int) -> void:
 
 func get_role(id: int) -> int:
 	return player_roles.get(id, Role.NONE)
+
+
+## Apariencia con la que hay que pintar el rig de ese jugador. Si el host no
+## mandó ninguna (partida vieja, peer fantasma), cae a la del rol -- nunca
+## devuelve null, así Player no necesita un caso especial.
+func get_appearance(id: int) -> CharacterAppearance:
+	var d: Dictionary = player_appearances.get(id, {})
+	if d.is_empty():
+		return CharacterAppearance.default_for_role(get_role(id))
+	return CharacterAppearance.from_dict(d)
+
+
+func get_player_name(id: int) -> String:
+	return str(player_names.get(id, "JUGADOR %d" % id))
 
 
 func get_rat_hp(id: int) -> int:

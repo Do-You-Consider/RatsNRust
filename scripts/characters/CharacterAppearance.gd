@@ -71,3 +71,35 @@ func color_for(part_id: String) -> Color:
 
 func is_emissive(part_id: String) -> bool:
 	return emissive_parts.has(part_id)
+
+
+# --------------------------------------------------------- serialización
+
+## A Dictionary plano para mandar por RPC y guardar en user://profile.cfg.
+##
+## OJO: NO mandes el Resource directo por RPC. Godot serializa Resources en
+## RPCs solo si están en disco (los manda por ruta res://); uno creado en
+## memoria viaja como null y el otro peer termina viendo un muñeco gris.
+func to_dict() -> Dictionary:
+	return {
+		"skin": skin_color,
+		"parts": part_colors.duplicate(),
+		"attach": attachments.duplicate(),
+		"emissive": Array(emissive_parts),
+	}
+
+
+static func from_dict(d: Dictionary) -> CharacterAppearance:
+	var a := CharacterAppearance.new()
+	a.skin_color = d.get("skin", a.skin_color)
+	a.part_colors = (d.get("parts", {}) as Dictionary).duplicate()
+	a.attachments = (d.get("attach", {}) as Dictionary).duplicate()
+	var em: Array[String] = []
+	for e in d.get("emissive", []):
+		em.append(str(e))
+	a.emissive_parts = em
+	return a
+
+
+func copy() -> CharacterAppearance:
+	return CharacterAppearance.from_dict(to_dict())

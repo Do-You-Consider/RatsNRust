@@ -107,20 +107,11 @@ func _init() -> void:
 
 
 func _matte(albedo: Color, rough: float, metallic: float = 0.0) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = albedo
-	m.roughness = rough
-	m.metallic = metallic
-	return m
+	return BuildKit.matte(albedo, rough, metallic)
 
 
 func _emissive(albedo: Color, emission: Color, energy: float) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = albedo
-	m.emission_enabled = true
-	m.emission = emission
-	m.emission_energy_multiplier = energy
-	return m
+	return BuildKit.emissive(albedo, emission, energy)
 
 
 func _init_palette() -> void:
@@ -1738,14 +1729,7 @@ func _create_rubble_pile(pos: Vector3, count: int, spread: float) -> void:
 
 
 func _add_omni(pos: Vector3, color: Color, energy: float, light_range: float, shadows: bool = false) -> OmniLight3D:
-	var omni := OmniLight3D.new()
-	omni.light_color = color
-	omni.light_energy = energy
-	omni.omni_range = light_range
-	omni.shadow_enabled = shadows
-	add_child(omni)
-	omni.position = pos
-	return omni
+	return BuildKit.omni(self, pos, color, energy, light_range, shadows)
 
 
 # =============================================================================
@@ -1753,84 +1737,15 @@ func _add_omni(pos: Vector3, color: Color, energy: float, light_range: float, sh
 # =============================================================================
 
 func _create_box(center: Vector3, size: Vector3, mat: StandardMaterial3D, has_collision: bool = true, rot: Vector3 = Vector3.ZERO) -> Node3D:
-	if has_collision:
-		var body := StaticBody3D.new()
-		body.position = center
-		body.rotation = rot
-		add_child(body)
-
-		var mi := MeshInstance3D.new()
-		var mesh := BoxMesh.new()
-		mesh.size = size
-		mi.mesh = mesh
-		mi.material_override = mat
-		body.add_child(mi)
-
-		var col := CollisionShape3D.new()
-		var shape := BoxShape3D.new()
-		shape.size = size
-		col.shape = shape
-		body.add_child(col)
-		return body
-	else:
-		var mi := MeshInstance3D.new()
-		mi.position = center
-		mi.rotation = rot
-		var mesh := BoxMesh.new()
-		mesh.size = size
-		mi.mesh = mesh
-		mi.material_override = mat
-		add_child(mi)
-		return mi
+	return BuildKit.box(self, center, size, mat, has_collision, rot)
 
 
 func _create_cylinder(center: Vector3, radius: float, height: float, mat: StandardMaterial3D, has_collision: bool = true, rot: Vector3 = Vector3.ZERO) -> Node3D:
-	if has_collision:
-		var body := StaticBody3D.new()
-		body.position = center
-		body.rotation = rot
-		add_child(body)
-
-		var mi := MeshInstance3D.new()
-		var cyl := CylinderMesh.new()
-		cyl.top_radius = radius
-		cyl.bottom_radius = radius
-		cyl.height = height
-		mi.mesh = cyl
-		mi.material_override = mat
-		body.add_child(mi)
-
-		var col := CollisionShape3D.new()
-		var shape := CylinderShape3D.new()
-		shape.radius = radius
-		shape.height = height
-		col.shape = shape
-		body.add_child(col)
-		return body
-	else:
-		var mi := MeshInstance3D.new()
-		mi.position = center
-		mi.rotation = rot
-		var cyl := CylinderMesh.new()
-		cyl.top_radius = radius
-		cyl.bottom_radius = radius
-		cyl.height = height
-		mi.mesh = cyl
-		mi.material_override = mat
-		add_child(mi)
-		return mi
+	return BuildKit.cylinder(self, center, radius, height, mat, has_collision, rot)
 
 
 func _create_sphere(center: Vector3, radius: float, mat: StandardMaterial3D) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	mi.position = center
-	var sph := SphereMesh.new()
-	sph.radius = radius
-	sph.height = radius * 2.0
-	mi.mesh = sph
-	mi.material_override = mat
-	add_child(mi)
-	return mi
+	return BuildKit.sphere(self, center, radius, mat)
 
 
 ## Cilindro entre dos puntos arbitrarios: lásers, cables colgando, tensores de
@@ -1844,77 +1759,26 @@ func _create_beam(from: Vector3, to: Vector3, radius: float, mat: StandardMateri
 ## espacio GLOBAL, así que dentro de un pivot rotado (cabezales, abanicos de
 ## láser) daba haces apuntando a cualquier lado.
 func _add_beam(parent: Node3D, from: Vector3, to: Vector3, radius: float, mat: StandardMaterial3D) -> MeshInstance3D:
-	var length := from.distance_to(to)
-	if length < 0.01:
-		return null
-	var mi := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = radius
-	cyl.bottom_radius = radius
-	cyl.height = length
-	cyl.radial_segments = 6
-	mi.mesh = cyl
-	mi.material_override = mat
-	var dir := from.direction_to(to)
-	var up := Vector3.UP if absf(dir.dot(Vector3.UP)) < 0.99 else Vector3.RIGHT
-	# looking_at deja el eje -Z sobre dir; el cilindro crece en +Y, de ahí el
-	# cuarto de vuelta sobre X (idéntico al rotate_object_local de antes).
-	var b := Basis.looking_at(dir, up) * Basis(Vector3.RIGHT, -PI * 0.5)
-	mi.transform = Transform3D(b, (from + to) * 0.5)
-	parent.add_child(mi)
-	return mi
+	return BuildKit.beam(parent, from, to, radius, mat)
 
 
 ## Mesh sin colisión colgando de un parent arbitrario (los props compuestos que
 ## viven bajo un Node3D rotado los necesitan: _create_box siempre cuelga de self).
 func _add_mesh_box(parent: Node3D, pos: Vector3, size: Vector3, mat: StandardMaterial3D, rot: Vector3 = Vector3.ZERO) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	mi.position = pos
-	mi.rotation = rot
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	mi.mesh = mesh
-	mi.material_override = mat
-	parent.add_child(mi)
-	return mi
+	return BuildKit.box(parent, pos, size, mat, false, rot) as MeshInstance3D
 
 
 func _add_mesh_cylinder(parent: Node3D, pos: Vector3, radius: float, height: float, mat: StandardMaterial3D, rot: Vector3 = Vector3.ZERO) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	mi.position = pos
-	mi.rotation = rot
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = radius
-	cyl.bottom_radius = radius
-	cyl.height = height
-	mi.mesh = cyl
-	mi.material_override = mat
-	parent.add_child(mi)
-	return mi
+	return BuildKit.cylinder(parent, pos, radius, height, mat, false, rot) as MeshInstance3D
 
 
 func _add_mesh_sphere(parent: Node3D, pos: Vector3, radius: float, mat: StandardMaterial3D) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	mi.position = pos
-	var sph := SphereMesh.new()
-	sph.radius = radius
-	sph.height = radius * 2.0
-	mi.mesh = sph
-	mi.material_override = mat
-	parent.add_child(mi)
-	return mi
+	return BuildKit.sphere(parent, pos, radius, mat)
 
 
 ## Colisión sin malla: red de seguridad (p.ej. arriba de la escalera rota).
 func _create_invisible_barrier(center: Vector3, size: Vector3) -> void:
-	var body := StaticBody3D.new()
-	body.position = center
-	add_child(body)
-	var col := CollisionShape3D.new()
-	var shape := BoxShape3D.new()
-	shape.size = size
-	col.shape = shape
-	body.add_child(col)
+	BuildKit.barrier(self, center, size)
 
 
 func _add_primitive_box(parent: Node3D, pos: Vector3, size: Vector3, mat: StandardMaterial3D) -> void:

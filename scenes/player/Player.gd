@@ -156,8 +156,14 @@ func _ready() -> void:
 ## a 2.14 m y la Rata a 1.58 m: la diferencia de POV es la mitad de lo que
 ## hace que uno intimide y el otro se sienta chico.
 func _build_body(role: int, is_local: bool) -> void:
+	var cfg := GameState.get_appearance(int(name))
+
 	rig = CharacterRig.create(role)
 	add_child(rig)
+	# La apariencia que eligió cada jugador en el menú llega replicada en
+	# GameState; CharacterRig.create() ya pintó la del rol por defecto, así que
+	# esto solo la pisa cuando hay una elección real detrás.
+	rig.apply_appearance(cfg)
 	rig.visible = not is_local
 	rig.one_shot_finished.connect(_on_rig_one_shot_finished)
 
@@ -174,6 +180,7 @@ func _build_body(role: int, is_local: bool) -> void:
 
 	if is_local and role == GameState.Role.SEEKER:
 		arms = CharacterRig.create(role, true)
+		arms.apply_appearance(cfg)
 		camera.add_child(arms)
 		var s := 0.7
 		arms.scale = Vector3(s, s, s)

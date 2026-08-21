@@ -23,6 +23,7 @@ config/icon="res://icon.svg"
 
 NetworkManager="*res://scripts/autoload/NetworkManager.gd"
 GameState="*res://scripts/autoload/GameState.gd"
+PlayerProfile="*res://scripts/autoload/PlayerProfile.gd"
 
 [display]
 

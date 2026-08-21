@@ -45,12 +45,28 @@ var _look_pivot: Node3D
 static func create(role: int, arms_only := false) -> CharacterRig:
 	var rig := CharacterRig.new()
 	rig.name = "Rig"
-	rig._build(CharacterProfiles.for_role(role), arms_only)
+	rig._build(CharacterProfiles.for_role(role), arms_only, true)
 	rig.apply_appearance(CharacterAppearance.default_for_role(role))
 	return rig
 
 
-func _build(p: Dictionary, arms_only: bool) -> void:
+## Rig de escenografía de menú: mismo modelo, pero sin las partículas de
+## sangre/polvo (no hay combate en el menú) y con la librería "menu" cargada
+## encima, que trae las poses de apoyarse en la baranda, mirar monitores,
+## esperar afuera y posar en el vestuario.
+##
+## `cfg` null = apariencia por defecto del rol.
+static func create_menu(role: int, cfg: CharacterAppearance = null) -> CharacterRig:
+	var rig := CharacterRig.new()
+	rig.name = "MenuRig"
+	var p := CharacterProfiles.for_role(role)
+	rig._build(p, false, false)
+	rig._anim.add_animation_library(MenuAnimations.LIBRARY_NAME, MenuAnimations.build_library(p, rig.pose))
+	rig.apply_appearance(cfg if cfg != null else CharacterAppearance.default_for_role(role))
+	return rig
+
+
+func _build(p: Dictionary, arms_only: bool, with_particles: bool) -> void:
 	profile = p
 
 	var built := RigBuilder.build(self, p)
@@ -73,7 +89,7 @@ func _build(p: Dictionary, arms_only: bool) -> void:
 				(parts[part_id] as MeshInstance3D).visible = false
 		for mi in parts.values():
 			(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	else:
+	elif with_particles:
 		_build_particles(p)
 
 
