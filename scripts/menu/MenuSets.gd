@@ -136,10 +136,18 @@ static func _balcony_structure(root: Node3D, pal: Dictionary, rng: RandomNumberG
 	root.add_child(hinge)
 	BuildKit.box(hinge, Vector3(0.02, 1.12, 0.63), Vector3(0.09, 2.24, 1.26), pal["dark_steel"])
 	BuildKit.box(hinge, Vector3(-0.05, 1.05, 1.15), Vector3(0.06, 0.06, 0.22), pal["rust_metal"])
-	# Rendija de luz verde de la sala de cámaras filtrándose por el marco:
-	# es lo que hace que la puerta se lea como "hay algo del otro lado".
-	BuildKit.box(root, Vector3(wall_x - 0.18, 1.15, 1.40), Vector3(0.02, 2.2, 1.3), pal["crt_phosphor"])
+	# Rendija de luz verde filtrándose por el canto de la hoja. Son TRES
+	# tiritas sobre el marco, no un panel: un panel del tamaño del vano se
+	# convertía en un rectángulo verde plano apenas la puerta se abría.
+	for slit in [
+		{"pos": Vector3(wall_x - 0.16, 1.15, 2.04), "size": Vector3(0.02, 2.24, 0.05)},
+		{"pos": Vector3(wall_x - 0.16, 1.15, 0.76), "size": Vector3(0.02, 2.24, 0.05)},
+		{"pos": Vector3(wall_x - 0.16, 2.27, 1.40), "size": Vector3(0.02, 0.05, 1.30)},
+	]:
+		BuildKit.box(root, slit.pos, slit.size, pal["crt_phosphor"])
 	BuildKit.omni(root, Vector3(wall_x + 0.5, 1.6, 1.40), Color(0.2, 0.85, 0.4), 0.5, 3.4)
+
+	_balcony_backroom(root, pal, wall_x)
 
 	# --- muro del fondo y techo ---
 	BuildKit.box(root, Vector3(0, 2.1, 5.25), Vector3(13.6, 4.2, 0.3), pal["brick"])
@@ -189,6 +197,63 @@ static func _balcony_structure(root: Node3D, pal: Dictionary, rng: RandomNumberG
 	BuildKit.omni(root, Vector3(3.6, 0.30, -0.90), Color(0.25, 0.65, 0.95), 1.1, 7.0)
 	BuildKit.omni(root, Vector3(-4.6, 3.4, 3.9), Color(0.95, 0.45, 0.20), 0.9, 6.5)
 	BuildKit.box(root, Vector3(1.8, 4.12, 3.6), Vector3(0.5, 0.12, 0.5), pal["led_warm"])
+
+
+## Lo que hay DEL OTRO LADO de la puerta del balcón: un tramo corto de pasillo
+## hacia la sala de cámaras. No es decoración opcional -- cuando la hoja se
+## abre, la cámara mira de frente al vano, y sin nada detrás el hueco se lee
+## como un plano verde plano pegado a la pared. Con piso, techo, paredes y una
+## luz al fondo, el mismo hueco se lee como profundidad.
+##
+## Mide 3 m y termina en un muro con un codo a la izquierda: alcanza para el
+## único encuadre que lo mira ("through") y no cuesta un set entero.
+static func _balcony_backroom(root: Node3D, pal: Dictionary, wall_x: float) -> void:
+	var back := wall_x - 0.15          # cara interior del muro del balcón
+	var depth := 3.0
+	var cx := back - depth * 0.5
+	var z0 := 0.62
+	var z1 := 2.18
+	var cz := (z0 + z1) * 0.5
+	var w := z1 - z0
+	var h := 2.55
+
+	# Caja del pasillo. Azulejo verde institucional abajo y hormigón arriba,
+	# el mismo corte que tiene la sala de cámaras: el pasillo tiene que
+	# parecer el principio de ESA sala, no un cuarto cualquiera.
+	BuildKit.box(root, Vector3(cx, -0.12, cz), Vector3(depth, 0.24, w + 0.4), pal["tile_floor"])
+	BuildKit.box(root, Vector3(cx, h + 0.12, cz), Vector3(depth, 0.24, w + 0.4), pal["concrete_wall"])
+	for sz in [z0 - 0.1, z1 + 0.1]:
+		BuildKit.box(root, Vector3(cx, 0.70, sz), Vector3(depth, 1.40, 0.20), pal["tile_wall"])
+		BuildKit.box(root, Vector3(cx, 1.98, sz), Vector3(depth, 1.16, 0.20), pal["concrete_wall"])
+
+	# Muro del fondo, corrido hacia atrás en la mitad de arriba para dejar un
+	# codo oscuro: es el detalle que impide que el fondo se lea como un tope.
+	var far := back - depth
+	BuildKit.box(root, Vector3(far, 1.28, cz + 0.42), Vector3(0.20, h, w * 0.55), pal["concrete_wall"])
+	BuildKit.box(root, Vector3(far - 0.9, 1.28, cz - 0.55), Vector3(0.20, h, w * 0.6), pal["concrete_wall"])
+	BuildKit.box(root, Vector3(far - 0.45, 1.28, cz - 0.85), Vector3(0.9, h, 0.20), pal["tile_wall"])
+
+	# Fuentes de la luz verde: un tubo en el techo y el resplandor del muro de
+	# monitores doblando la esquina. Antes la luz salía de un plano emisivo
+	# gigante; ahora sale de dos objetos chicos y lo que se ve iluminado es la
+	# geometría.
+	BuildKit.box(root, Vector3(cx + 0.3, h - 0.10, cz), Vector3(0.85, 0.07, 0.14), pal["exit_green"])
+	# Con sombra: es la ÚNICA del menú que la necesita. Sin sombra la luz
+	# atraviesa el muro del balcón y todo el set se tiñe de verde, que es
+	# exactamente el problema que este pasillo viene a resolver.
+	BuildKit.omni(root, Vector3(cx + 0.3, h - 0.35, cz), Color(0.25, 0.95, 0.45), 1.5, 3.4, true)
+	BuildKit.omni(root, Vector3(far + 0.5, 1.35, cz - 0.7), Color(0.20, 0.85, 0.40), 1.6, 2.8)
+
+	# Un monitor de servicio contra el muro del fondo, de canto: dos píxeles de
+	# verde parpadeando que confirman que ahí adentro hay pantallas.
+	BuildKit.box(root, Vector3(far + 0.13, 1.55, cz + 0.42), Vector3(0.06, 0.46, 0.62),
+		Palette.screen(Color(0.28, 0.90, 0.48), 1.0))
+
+	# Zócalo y caños: sin esto el pasillo son cinco cajas lisas.
+	BuildKit.box(root, Vector3(cx, 0.09, z0 + 0.02), Vector3(depth, 0.18, 0.06), pal["dark_steel"])
+	BuildKit.box(root, Vector3(cx, 0.09, z1 - 0.02), Vector3(depth, 0.18, 0.06), pal["dark_steel"])
+	BuildKit.cylinder(root, Vector3(cx, h - 0.28, z1 - 0.18), 0.055, depth, pal["pipe_industrial"],
+		false, Vector3(0, 0, PI * 0.5))
 
 
 ## El vacío del atrio: pista de baile 9 metros más abajo, con público, cabina
@@ -589,18 +654,16 @@ static func _exterior_street(root: Node3D, pal: Dictionary, rng: RandomNumberGen
 
 static func _exterior_facade(root: Node3D, pal: Dictionary, anim: SetAnimator) -> void:
 	var fz := -23.0
-	# Frente de ladrillo del boliche
-	BuildKit.box(root, Vector3(0, 5.5, fz - 0.4), Vector3(19.0, 11.0, 0.8), pal["brick"])
-	BuildKit.box(root, Vector3(0, 0.9, fz + 0.05), Vector3(19.0, 1.8, 0.2), pal["concrete_wall"])
+	# Frente de ladrillo del boliche. Va en TRES pedazos (izquierda, derecha y
+	# dintel) porque la entrada es un hueco de verdad en la pared: un panel de
+	# luz pegado sobre un muro entero no se lee como puerta, se lee como un
+	# cartel iluminado.
+	for sx in [-1.0, 1.0]:
+		BuildKit.box(root, Vector3(sx * 5.425, 5.5, fz - 0.4), Vector3(8.15, 11.0, 0.8), pal["brick"])
+		BuildKit.box(root, Vector3(sx * 5.425, 0.9, fz + 0.05), Vector3(8.15, 1.8, 0.2), pal["concrete_wall"])
+	BuildKit.box(root, Vector3(0, 7.53, fz - 0.4), Vector3(2.7, 6.95, 0.8), pal["brick"])
 
-	# --- vano de la entrada: un rectángulo de luz, que es lo que la hace leer
-	# como "adentro pasa algo" desde 20 metros ---
-	BuildKit.box(root, Vector3(0, 1.65, fz + 0.10), Vector3(3.6, 3.30, 0.10),
-		BuildKit.glow_alpha(Color(1.0, 0.18, 0.62), 1.6, 0.85))
-	for sx in [-2.0, 2.0]:
-		BuildKit.box(root, Vector3(sx, 1.75, fz + 0.22), Vector3(0.36, 3.60, 0.36), pal["dark_steel"])
-		BuildKit.box(root, Vector3(sx, 1.75, fz + 0.40), Vector3(0.12, 3.20, 0.12), pal["neon_cyan"])
-	BuildKit.box(root, Vector3(0, 3.50, fz + 0.30), Vector3(4.4, 0.30, 0.5), pal["dark_steel"])
+	_exterior_entrance(root, pal, anim, fz)
 
 	# Marquesina
 	BuildKit.box(root, Vector3(0, 4.30, fz + 1.30), Vector3(6.4, 0.22, 2.6), pal["rust_metal"])
@@ -644,6 +707,128 @@ static func _exterior_facade(root: Node3D, pal: Dictionary, anim: SetAnimator) -
 	BuildKit.box(bouncer, Vector3(0, 1.16, 0), Vector3(0.78, 0.56, 0.36), pal["silhouette"])
 	BuildKit.sphere(bouncer, Vector3(0, 1.58, 0), 0.16, pal["silhouette"])
 	anim.sway(bouncer, 4.0, 0.5, 0.0)
+
+
+## La entrada del boliche. Antes era un rectángulo semitransparente de 3.6 x
+## 3.3 apoyado sobre el ladrillo: casi cuadrado, con el muro viéndose a través,
+## y flanqueado por dos barras cian. Leía como un cartel, no como una puerta.
+##
+## Lo que la hace leer como puerta, en orden de importancia:
+##   1. PROPORCIÓN -- 2.5 de ancho por 3.5 de alto. Un vano casi cuadrado no
+##      es una puerta a ninguna escala.
+##   2. HUECO REAL -- el vano atraviesa la pared y detrás hay un hall con piso,
+##      techo y fondo. Antes no había un "detrás".
+##   3. DOS HOJAS -- con junta al medio, barras de empuje verticales y zócalo
+##      de chapa. Quedan ABIERTAS hacia adentro, plegadas contra el hall: es
+##      lo que dice "esto se abre" y a la vez devuelve el rectángulo de luz.
+## El montante iluminado sobre las hojas se queda con el trabajo que hacía el
+## panel viejo (avisar desde 20 m que adentro pasa algo) sin ocupar el vano.
+static func _exterior_entrance(root: Node3D, pal: Dictionary, anim: SetAnimator,
+		fz: float) -> void:
+	var hw := 1.25                 # medio ancho del vano libre
+	var door_h := 3.50
+	var head_y := 4.05             # arriba del montante
+	var leaf_z := fz - 0.55        # hojas RETRANQUEADAS: la jamba que queda por
+	                               # delante es la que da el espesor del muro
+
+	_exterior_lobby(root, pal, anim, fz)
+
+	# --- jambas y dintel del hueco (chapa, forrando el espesor del muro) ---
+	for sx in [-1.0, 1.0]:
+		BuildKit.box(root, Vector3(sx * (hw + 0.05), head_y * 0.5, fz - 0.4),
+			Vector3(0.10, head_y, 0.80), pal["dark_steel"])
+	BuildKit.box(root, Vector3(0, head_y - 0.05, fz - 0.4), Vector3(2.7, 0.10, 0.80), pal["dark_steel"])
+	BuildKit.box(root, Vector3(0, 0.02, fz - 0.4), Vector3(2.6, 0.04, 0.80), pal["hazard_mark"])
+
+	# --- montante iluminado sobre las hojas ---
+	var transom := Palette.screen(Color(1.0, 0.16, 0.60), 2.0)
+	anim.pulse(transom, 1.5, 2.4, 0.9, 0.6)
+	BuildKit.box(root, Vector3(0, 3.78, leaf_z), Vector3(2.44, 0.44, 0.08), transom)
+	BuildKit.box(root, Vector3(0, 3.53, leaf_z + 0.02), Vector3(2.50, 0.09, 0.14), pal["dark_steel"])
+
+	# --- las dos hojas ---
+	# Cada una cuelga de un pivote en su jamba, igual que la del balcón: rotar
+	# la hoja sobre su centro la haría girar como una puerta giratoria.
+	for sx2: float in [-1.0, 1.0]:
+		var pivot := Node3D.new()
+		pivot.name = "ClubLeafL" if sx2 < 0 else "ClubLeafR"
+		pivot.position = Vector3(sx2 * hw, 0.0, leaf_z)
+		# Las dos abiertas hacia adentro, no una sola: la cámara mira el vano
+		# desde la derecha, y con una hoja quieta tapaba justo el pedazo de hall
+		# que se veía por la abertura.
+		pivot.rotation.y = 0.72 if sx2 < 0 else -0.72
+		root.add_child(pivot)
+
+		# El eje local corre del pivote (0) al filo libre (-sx2 * hw): la hoja
+		# derecha crece hacia el centro del vano, no hacia el ladrillo.
+		var cx := -sx2 * hw * 0.5
+		BuildKit.box(pivot, Vector3(cx, door_h * 0.5, 0.0), Vector3(hw, door_h, 0.09),
+			pal["dark_steel"])
+		# Zócalo de chapa y travesaño: dos bandas que dan la escala de la hoja.
+		BuildKit.box(pivot, Vector3(cx, 0.34, 0.06), Vector3(hw - 0.10, 0.55, 0.03), pal["paint_worn"])
+		BuildKit.box(pivot, Vector3(cx, 2.05, 0.06), Vector3(hw - 0.10, 0.05, 0.03), pal["rust_metal"])
+		# Barra de empuje vertical, del lado de la junta.
+		BuildKit.cylinder(pivot, Vector3(-sx2 * (hw - 0.22), 1.55, 0.10), 0.035, 2.1,
+			pal["shrinkwrap"])
+		for by: float in [0.55, 2.55]:
+			BuildKit.box(pivot, Vector3(-sx2 * (hw - 0.22), by, 0.055), Vector3(0.06, 0.06, 0.10),
+				pal["dark_steel"])
+		# Filo interior con neón: es lo que dibuja el canto de la hoja abierta
+		# contra el hall iluminado.
+		BuildKit.box(pivot, Vector3(-sx2 * (hw - 0.02), 1.75, 0.045), Vector3(0.04, 3.30, 0.02),
+			pal["neon_magenta"])
+
+	# --- neón vertical del marco, ahora POR FUERA de la jamba ---
+	# Antes estaba a 2.0 del eje, casi encima del vano, y las dos barras cian se
+	# leían como los bordes de un cartel.
+	for sx3 in [-1.0, 1.0]:
+		BuildKit.box(root, Vector3(sx3 * 1.72, 2.05, fz + 0.14), Vector3(0.30, 4.10, 0.28),
+			pal["dark_steel"])
+		BuildKit.box(root, Vector3(sx3 * 1.72, 2.05, fz + 0.30), Vector3(0.10, 3.70, 0.10),
+			pal["neon_cyan"])
+	BuildKit.box(root, Vector3(0, 4.22, fz + 0.22), Vector3(3.9, 0.26, 0.44), pal["dark_steel"])
+
+	# Luz que se escapa por el vano y moja el escalón. Sale del hall, no de la
+	# fachada, así que el charco de luz cae DELANTE de la puerta.
+	BuildKit.omni(root, Vector3(-0.35, 0.55, fz - 0.30), Color(1.0, 0.22, 0.62), 2.4, 5.0)
+
+
+## El hall detrás de las hojas. Corto (2.8 m) y sin detalle fino: sólo existe
+## para que por la hoja entreabierta se vea PROFUNDIDAD y no el vacío negro del
+## otro lado de la pared.
+static func _exterior_lobby(root: Node3D, pal: Dictionary, anim: SetAnimator, fz: float) -> void:
+	var back := fz - 3.6
+	var cz := (fz - 0.8 + back) * 0.5
+
+	BuildKit.box(root, Vector3(0, -0.06, cz), Vector3(4.6, 0.12, 2.9), pal["wood_floor"])
+	BuildKit.box(root, Vector3(0, 4.30, cz), Vector3(4.6, 0.20, 2.9), pal["concrete_wall"])
+	for sx in [-1.0, 1.0]:
+		BuildKit.box(root, Vector3(sx * 2.30, 2.10, cz), Vector3(0.20, 4.20, 2.9), pal["brick"])
+	BuildKit.box(root, Vector3(0, 2.10, back), Vector3(4.8, 4.20, 0.20), pal["concrete_wall"])
+
+	# Cortina y molinete insinuados: dos volúmenes contra el fondo para que el
+	# hall no sea una caja lisa iluminada.
+	BuildKit.box(root, Vector3(1.05, 1.55, back + 0.22), Vector3(1.9, 3.10, 0.14), pal["fabric_red"])
+	BuildKit.cylinder(root, Vector3(-1.35, 0.52, back + 0.55), 0.09, 1.04, pal["dark_steel"])
+	BuildKit.box(root, Vector3(-1.35, 1.02, back + 0.90), Vector3(0.06, 0.05, 0.70), pal["shrinkwrap"])
+
+	# Neón de pared y su rebote: la fuente de la cuña magenta que sale al
+	# callejón por la hoja entreabierta.
+	var strip := Palette.screen(Color(1.0, 0.20, 0.62), 2.2)
+	anim.pulse(strip, 1.6, 2.6, 1.3, 2.2)
+	BuildKit.box(root, Vector3(-2.16, 2.35, cz), Vector3(0.06, 0.14, 2.3), strip)
+	# Segunda puerta al fondo, alineada con la rendija de la hoja entreabierta:
+	# es el punto brillante que se ve desde el callejón y lo que convierte al
+	# hall en un paso hacia algún lado en vez de un cuarto cerrado.
+	var inner := Palette.screen(Color(1.0, 0.24, 0.66), 2.6)
+	anim.pulse(inner, 2.0, 3.2, 2.1, 0.4)
+	# Corrida a la izquierda del eje: es donde caen las visuales de las dos
+	# cámaras del set al pasar entre las hojas abiertas.
+	BuildKit.box(root, Vector3(-0.30, 1.30, back + 0.16), Vector3(1.50, 2.60, 0.10), inner)
+	BuildKit.box(root, Vector3(-0.30, 2.68, back + 0.22), Vector3(1.70, 0.16, 0.14), pal["dark_steel"])
+	BuildKit.box(root, Vector3(0, 4.14, cz + 0.2), Vector3(1.6, 0.10, 0.16), pal["neon_violet"])
+	BuildKit.omni(root, Vector3(-0.6, 2.30, cz + 0.3), Color(1.0, 0.24, 0.64), 4.0, 5.4)
+	BuildKit.omni(root, Vector3(0.9, 1.40, back + 1.1), Color(0.65, 0.20, 0.95), 1.8, 5.0)
 
 
 static func _exterior_props(root: Node3D, pal: Dictionary, anim: SetAnimator,

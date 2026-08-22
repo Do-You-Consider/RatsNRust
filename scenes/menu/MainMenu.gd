@@ -57,8 +57,7 @@ var _ui: CanvasLayer
 var _menu_fx: ColorRect
 var _cam_fx: ColorRect
 var _osd: Control
-var _osd_time: Label
-var _osd_rec: Label
+var _osd_rec: ColorRect
 var _fade: ColorRect
 var _status: Label
 var _screens: Dictionary = {}         # State/modal -> Control
@@ -111,7 +110,6 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_osd_t += delta
 	if _osd.visible:
-		_osd_time.text = Time.get_time_string_from_system()
 		_osd_rec.modulate.a = 1.0 if fmod(_osd_t, 1.6) < 0.9 else 0.15
 
 
@@ -174,7 +172,7 @@ func _enter_title(fade: bool = true) -> void:
 
 	_set_fx(false)
 	_show_screen(State.TITLE)
-	_status.text = "SELECCIONÁ UNA OPCIÓN"
+	_status.text = ""
 	if fade:
 		await _fade_in()
 
@@ -241,7 +239,7 @@ func _enter_rooms(animate_in: bool) -> void:
 
 	_cam.drift(shots["main"], 0.30, 11.0)
 	_show_screen(State.ROOMS)
-	_status.text = "SISTEMA DE CÁMARAS EN LÍNEA"
+	_status.text = ""
 	_start_pointing_loop()
 
 
@@ -359,14 +357,10 @@ func _refresh_lobby() -> void:
 	_btn_start.visible = multiplayer.is_server()
 	_btn_start.disabled = not NetworkManager.all_ready()
 
-	if NetworkManager.roster.size() < 2:
-		_status.text = "ESPERANDO JUGADORES (MÍNIMO 2)"
-	elif not NetworkManager.all_ready():
-		_status.text = "ESPERANDO QUE TODOS ESTÉN LISTOS"
-	elif multiplayer.is_server():
-		_status.text = "TODOS LISTOS // PODÉS INICIAR"
-	else:
-		_status.text = "TODOS LISTOS // ESPERANDO AL HOST"
+	# Sin cartel de estado: la lista de arriba ya muestra quién está LISTO y
+	# quién no, y INICIAR JUEGO se habilita solo cuando se puede arrancar.
+	# El cartel además caía justo encima del botón VOLVER.
+	_status.text = ""
 
 
 # =============================================================================
@@ -384,7 +378,7 @@ func _enter_appearance() -> void:
 	_apply_appearance_role()
 	_set_fx(false)
 	_show_screen(State.APPEARANCE)
-	_status.text = "CATÁLOGO EN CONSTRUCCIÓN"
+	_status.text = ""
 	await _fade_in()
 	_set_busy(false)
 
@@ -503,16 +497,16 @@ func _build_ui() -> void:
 	_osd.visible = false
 	_ui.add_child(_osd)
 
-	var cam_id := _label(_osd, "CAM 04 -- ENTRADA", 7, Color(0.75, 0.95, 0.8))
-	cam_id.position = Vector2(12, 10)
-	_osd_rec = _label(_osd, "* REC", 7, Color(1.0, 0.25, 0.2))
-	_osd_rec.position = Vector2(410, 10)
-	_osd_time = _label(_osd, "00:00:00", 7, Color(0.75, 0.95, 0.8))
-	_osd_time.position = Vector2(388, 248)
-	# Esquinas de encuadre: cuatro rayitas que insinúan el visor de la cámara.
-	for c in [Vector2(10, 22), Vector2(452, 22), Vector2(10, 240), Vector2(452, 240)]:
-		var mark := _label(_osd, "+", 8, Color(0.7, 0.9, 0.75, 0.6))
-		mark.position = c
+	# El OSD es puro dibujo: testigo de grabación y esquinas de encuadre. Antes
+	# tenía "CAM 04", "* REC" y un reloj; el cartel de cámara se lee igual con
+	# el punto rojo parpadeando y sobra un renglón de texto en pantalla.
+	_osd_rec = _osd_mark(Vector2(444, 12), Vector2(8, 8), Color(1.0, 0.25, 0.2))
+	for c in [Vector2(10, 22), Vector2(444, 22), Vector2(10, 240), Vector2(444, 240)]:
+		var flip_x := 1.0 if c.x < 200.0 else -1.0
+		var flip_y := 1.0 if c.y < 130.0 else -1.0
+		var tick := Color(0.7, 0.9, 0.75, 0.6)
+		_osd_mark(c, Vector2(10.0 * flip_x, 1.0), tick)
+		_osd_mark(c, Vector2(1.0, 10.0 * flip_y), tick)
 
 	# --- pantallas ---
 	var screens := Control.new()
@@ -543,6 +537,18 @@ func _build_ui() -> void:
 	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ui.add_child(_fade)
+
+
+## Rectángulo del OSD. Acepta tamaños negativos para poder dar la esquina
+## con el mismo par de llamadas de los cuatro lados.
+func _osd_mark(pos: Vector2, size: Vector2, color: Color) -> ColorRect:
+	var r := ColorRect.new()
+	r.color = color
+	r.position = Vector2(pos.x + minf(size.x, 0.0), pos.y + minf(size.y, 0.0))
+	r.size = size.abs()
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_osd.add_child(r)
+	return r
 
 
 func _fx_rect(shader: Shader, params: Dictionary) -> ColorRect:
@@ -643,16 +649,10 @@ func _build_title_screen(parent: Node) -> void:
 
 	var title := _label(s, "RATS N RUST", 28, Color(0.93, 0.89, 0.81))
 	title.position = Vector2(16, 14)
-	var sub := _label(s, "ESCONDERSE ES LO ÚNICO QUE SABÉS HACER", 6, MenuTheme.TEXT_DIM)
-	sub.position = Vector2(19, 46)
 
-	var col := _column(s, Vector2(18, 66), 5)
+	var col := _column(s, Vector2(18, 56), 5)
 	_button(col, "JUGAR", "BigButton", 104, _on_play_pressed)
 	_button(col, "SALIR", "Button", 104, func(): get_tree().quit())
-
-	var who := _label(s, "", 6, MenuTheme.TEXT_DIM)
-	who.position = Vector2(19, 112)
-	who.text = "IDENT: %s" % PlayerProfile.player_name
 
 
 func _build_rooms_screen(parent: Node) -> void:
@@ -661,9 +661,6 @@ func _build_rooms_screen(parent: Node) -> void:
 	_button(col, "CREAR SALA", "BigButton", 112, func(): _show_modal("create"))
 	_button(col, "UNIRSE A SALA", "BigButton", 112, _on_join_pressed)
 	_button(col, "VOLVER", "GhostButton", 112, _on_back_pressed)
-
-	var tag := _label(s, "CÁMARAS", 8, Color(0.55, 0.85, 0.65))
-	tag.position = Vector2(196, 12)
 
 
 func _build_create_modal(parent: Node) -> void:
@@ -749,10 +746,8 @@ func _build_join_modal(parent: Node) -> void:
 func _build_lobby_screen(parent: Node) -> void:
 	var s := _screen(parent, State.LOBBY)
 
-	var head := _label(s, "LOBBY", 16, Color(0.93, 0.89, 0.81))
-	head.position = Vector2(14, 24)
 	_lobby_title = _label(s, "", 6, MenuTheme.TEXT_DIM)
-	_lobby_title.position = Vector2(15, 44)
+	_lobby_title.position = Vector2(15, 26)
 
 	_lobby_list = _column(s, Vector2(15, 58), 3)
 
@@ -938,8 +933,10 @@ func _on_rooms_found(rooms: Array) -> void:
 	_clear(_room_rows)
 
 	if rooms.is_empty():
+		# El vacío ya lo dice la lista; repetirlo abajo era el mismo aviso dos
+		# veces en la misma pantalla.
 		_label(_room_rows, "NO SE ENCONTRÓ NINGUNA SALA", 7, MenuTheme.TEXT_DIM)
-		_status.text = "SIN SALAS EN LA RED // PROBÁ CREAR UNA"
+		_status.text = ""
 		return
 
 	for room in rooms:

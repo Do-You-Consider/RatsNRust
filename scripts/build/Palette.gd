@@ -68,7 +68,43 @@ static func create() -> Dictionary:
 	p["haze"] = BuildKit.glow_alpha(Color(0.55, 0.25, 0.75), 0.55, 0.055)
 	p["light_shaft"] = BuildKit.glow_alpha(Color(1.0, 0.35, 0.75), 1.1, 0.11)
 
+	_apply_surfaces(p)
 	return p
+
+
+## Texturas procedurales sobre la paleta, con las MISMAS recetas que usa el
+## mapa (ver MapGenerator._apply_surfaces).
+##
+## Está acá por la regla de arriba: si el mapa tiene ladrillo texturado y el
+## menú ladrillo de color plano, el menú y la partida parecen dos juegos
+## distintos -- que es justamente lo que esta clase existe para evitar.
+static func _apply_surfaces(p: Dictionary) -> void:
+	var brick := ProcTextures.brick()
+	var concrete := ProcTextures.concrete()
+	var planks := ProcTextures.planks()
+	var tiles := ProcTextures.tiles()
+	var plate := ProcTextures.plate()
+	var rust := ProcTextures.rust()
+	var grate := ProcTextures.grate()
+	var grunge := ProcTextures.grunge()
+
+	ProcTextures.apply(p["brick"], brick, 2.4, 1.5, 0.6, Color(0.62, 0.6, 0.6))
+	ProcTextures.apply(p["concrete_wall"], concrete, 3.2, 0.9, 0.5, Color(0.22, 0.205, 0.19))
+	ProcTextures.apply(p["concrete_floor"], grunge, 3.4, 0.55, 0.5, Color(0.155, 0.146, 0.138))
+	ProcTextures.apply(p["tile_floor"], tiles, 2.0, 1.1, 0.7, Color(0.66, 0.68, 0.66))
+	ProcTextures.apply(p["tile_wall"], tiles, 1.6, 1.1, 0.7, Color(0.78, 0.82, 0.80))
+	ProcTextures.apply(p["wood_floor"], planks, 2.6, 1.0, 0.55, Color(1.25, 1.18, 1.08))
+	ProcTextures.apply(p["aged_wood"], planks, 1.4, 0.9, 0.5, Color(1.35, 1.28, 1.18))
+	ProcTextures.apply(p["rust_metal"], rust, 1.8, 1.2, 0.7, Color(0.75, 0.72, 0.70))
+	ProcTextures.apply(p["pipe_industrial"], rust, 1.2, 0.8, 0.5, Color(1.05, 0.95, 0.55))
+	ProcTextures.apply(p["grate"], grate, 1.2, 1.4, 0.4, Color(0.85, 0.87, 0.90))
+	ProcTextures.apply(p["dark_steel"], plate, 1.6, 0.7, 0.45, Color(0.85, 0.87, 0.92))
+	ProcTextures.apply(p["hazard_mark"], plate, 1.0, 0.6, 0.4, Color(1.10, 0.95, 0.28))
+	# La vereda del menú no existe en el mapa, pero es hormigón igual.
+	ProcTextures.apply(p["sidewalk"], concrete, 2.6, 0.8, 0.5, Color(0.18, 0.172, 0.164))
+
+	for key in ["rubble", "paint_worn", "leather_brown", "fabric_red", "mattress", "rubber_black"]:
+		ProcTextures.apply(p[key], grunge, 2.2, 0.4, 0.5)
 
 
 ## Fósforo de monitor en un color arbitrario. Cada monitor del muro de cámaras

@@ -104,6 +104,11 @@ var _shake_mag: float = 0.0
 var _base_fov: float = 78.0
 var _fov_punch: float = 0.0
 
+## Patada a la basura suelta del mapa (ver _kick_loose_props).
+const KICK_MIN_SPEED := 1.2  # abajo de esto no se patea nada: caminar despacio
+const KICK_FORCE := 0.5      # m/s de vaso por cada m/s de jugador
+var _prop_kicker: Area3D
+
 
 func _ready() -> void:
 	# El nombre del nodo es el peer id (lo setea Game._spawn_player), así que
@@ -141,6 +146,8 @@ func _ready() -> void:
 	# verla en el piso, no parada: el estado vive en GameState y se replica.
 	if role == GameState.Role.HIDER and GameState.is_downed(player_id):
 		set_downed(true, false)
+
+	_build_prop_kicker()
 
 	if is_local and role == GameState.Role.HIDER and heartbeat_sound != null:
 		heartbeat_player.stream = heartbeat_sound
@@ -368,6 +375,55 @@ func _process(delta: float) -> void:
 
 	if _is_local and _role == GameState.Role.HIDER and heartbeat_sound != null:
 		_update_heartbeat()
+
+	_kick_loose_props(horizontal_speed)
+
+
+## La basura suelta del mapa (vasos, latas, botellas) son RigidBody3D en su
+## propia capa de colisión, que el cuerpo del jugador NO enmascara: un
+## CharacterBody3D trata a un RigidBody3D como pared y una lata de 13 cm sería
+## un muro invisible en plena persecución.
+##
+## Así que el contacto lo detecta este Area3D a la altura del pie y el empujón
+## se aplica a mano. Es puramente cosmético (nada de esto se replica: cada
+## cliente vuela sus propios vasos), pero es feedback constante de que el
+## mundo reacciona a que estés corriendo.
+func _build_prop_kicker() -> void:
+	_prop_kicker = Area3D.new()
+	_prop_kicker.collision_layer = 0
+	_prop_kicker.collision_mask = 0
+	_prop_kicker.set_collision_mask_value(MapGenerator.LOOSE_LAYER, true)
+	_prop_kicker.monitorable = false
+	var shape := CollisionShape3D.new()
+	var sphere := SphereShape3D.new()
+	sphere.radius = 0.55
+	shape.shape = sphere
+	_prop_kicker.add_child(shape)
+	add_child(_prop_kicker)
+	_prop_kicker.position = Vector3(0, 0.3, 0)
+
+
+func _kick_loose_props(horizontal_speed: float) -> void:
+	if _prop_kicker == null or horizontal_speed < KICK_MIN_SPEED:
+		return
+	var heading := Vector3(velocity.x, 0.0, velocity.z).normalized()
+	for b in _prop_kicker.get_overlapping_bodies():
+		if not (b is RigidBody3D):
+			continue
+		var rb := b as RigidBody3D
+		# Solo pateamos lo que está quieto: sin esto le aplicaríamos un impulso
+		# por cuadro mientras el vaso sigue dentro del área y saldría disparado
+		# a la estratósfera.
+		if rb.linear_velocity.length() > 1.5:
+			continue
+		var away := rb.global_position - global_position
+		away.y = 0.0
+		away = away.normalized() if away.length() > 0.01 else heading
+		# Mezcla de "hacia afuera del pie" y "hacia donde iba": patear de
+		# frente lo manda lejos, rozarlo apenas lo desplaza al costado.
+		var dir := (away * 0.55 + heading * 0.45).normalized()
+		var push: float = clampf(horizontal_speed, 1.0, 8.0)
+		rb.apply_impulse((dir * push * KICK_FORCE + Vector3.UP * 1.1) * rb.mass, Vector3(0, -0.04, 0))
 
 
 ## Elige el loop del rig a partir de la velocidad ya replicada. Como el dato
